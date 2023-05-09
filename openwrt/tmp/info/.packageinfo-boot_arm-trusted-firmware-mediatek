@@ -1,0 +1,44 @@
+Source-Makefile: package/boot/arm-trusted-firmware-mediatek/Makefile
+
+Package: trusted-firmware-a-mt7986-snand
+Version: icb_rebb-main-0
+Depends: +libc +USE_GLIBC:librt +USE_GLIBC:libpthread @!IN_SDK +u-boot-mt7986 +libmbedtls @TARGET_mediatek_mt7986
+Conflicts: 
+Menu-Depends: 
+Provides: 
+Build-Variant: mt7986-snand
+Section: boot
+Category: Boot Loaders
+Title: Trusted-Firmware-A for MediaTek MT7986 (SPI-NAND)
+Maintainer: Daniel Golle <daniel@makrotopia.org>
+Source: arm-trusted-firmware-mediatek-icb_rebb-main.tar.xz
+License: BSD-3-Clause proprietary
+LicenseFiles: docs/license.rst
+Type: bin
+Description: Trusted-Firmware-A for MediaTek MT7986 (SPI-NAND)
+https://www.trustedfirmware.org/projects/tf-a/
+Daniel Golle <daniel@makrotopia.org>
+@@
+
+
+Package: trusted-firmware-a-mt7622-snand
+Version: icb_rebb-main-0
+Depends: +libc +USE_GLIBC:librt +USE_GLIBC:libpthread @!IN_SDK +u-boot-mt7622 +libmbedtls @TARGET_mediatek_mt7622
+Conflicts: 
+Menu-Depends: 
+Provides: 
+Build-Variant: mt7622-snand
+Section: boot
+Category: Boot Loaders
+Title: Trusted-Firmware-A for MediaTek MT7622 (SPI-NAND)
+Maintainer: Daniel Golle <daniel@makrotopia.org>
+Source: arm-trusted-firmware-mediatek-icb_rebb-main.tar.xz
+License: BSD-3-Clause proprietary
+LicenseFiles: docs/license.rst
+Type: bin
+Description: Trusted-Firmware-A for MediaTek MT7622 (SPI-NAND)
+https://www.trustedfirmware.org/projects/tf-a/
+Daniel Golle <daniel@makrotopia.org>
+@@
+
+

@@ -1,0 +1,21 @@
+Source-Makefile: package/feeds/mtk_openwrt_feed/mtk_failsafe/Makefile
+
+Package: mtk_failsafe
+Submenu: Misc
+Version: 1-r16805-b119562a07
+Depends: +libc +USE_GLIBC:librt +USE_GLIBC:libpthread 
+Conflicts: 
+Menu-Depends: 
+Provides: 
+Section: MTK Properties
+Category: MTK Properties
+Repository: mtk_openwrt_feed
+Title: mtk failsafe script
+Maintainer: 
+Source: 
+Type: ipkg
+Description:   mtk init script for failsafe mode
+
+@@
+
+

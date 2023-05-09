@@ -1,0 +1,982 @@
+Source-Makefile: target/linux/mediatek/Makefile
+Target: mediatek
+Target-Board: mediatek
+Target-Name: MediaTek Ralink ARM
+Target-Arch: arm
+Target-Arch-Packages: arm_xscale
+Target-Features: fpu nand ramdisk squashfs
+Target-Depends: 
+Target-Optimization: -Os -pipe
+CPU-Type: xscale
+Linux-Version: 5.4.225
+Linux-Testing-Version: 5.4.225
+Linux-Release: 1
+Linux-Kernel-Arch: arm
+Target-Description:
+
+@@
+Default-Packages: base-files ca-bundle dropbear fstools libc libgcc libustream-wolfssl logd mtd netifd opkg uci uclient-fetch urandom-seed urngd busybox procd dnsmasq firewall ip6tables iptables kmod-ipt-offload odhcp6c odhcpd-ipv6only ppp ppp-mod-pppoe kmod-leds-gpio kmod-gpio-button-hotplug 
+Target: mediatek/mt7622
+Target-Board: mediatek
+Target-Name: MT7622
+Target-Arch: aarch64
+Target-Arch-Packages: aarch64_cortex-a53
+Target-Features: dt fpu gpio nand pci pcie ramdisk rtc squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -mcpu=cortex-a53
+CPU-Type: cortex-a53
+Linux-Version: 5.4.225
+Linux-Testing-Version: 5.4.225
+Linux-Release: 1
+Linux-Kernel-Arch: arm64
+Target-Description:
+	Build firmware images for MediaTek MT7622 ARM based boards.
+@@
+Default-Packages: base-files ca-bundle dropbear fstools libc libgcc libustream-wolfssl logd mtd netifd opkg uci uclient-fetch urandom-seed urngd busybox procd kmod-mt7615e kmod-mt7615-firmware wpad-basic-wolfssl dnsmasq firewall ip6tables iptables kmod-ipt-offload odhcp6c odhcpd-ipv6only ppp ppp-mod-pppoe kmod-leds-gpio kmod-gpio-button-hotplug iwinfo
+Target-Profile: DEVICE_bpi_bananapi-r64
+Target-Profile-Name: Bpi Banana Pi R64
+Target-Profile-Packages: kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: bananapi,bpi-r64
+
+
+Target-Profile-Description:
+Build firmware images for Bpi Banana Pi R64
+
+
+
+@@
+
+Target-Profile: DEVICE_bpi_bananapi-r64-rootdisk
+Target-Profile-Name: Bpi Banana Pi R64 (rootdisk)
+Target-Profile-Packages: kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: bananapi,bpi-r64
+
+
+Target-Profile-Description:
+Build firmware images for Bpi Banana Pi R64 (rootdisk)
+
+
+
+@@
+
+Target-Profile: DEVICE_elecom_wrc-2533gent
+Target-Profile-Name: Elecom WRC-2533GENT
+Target-Profile-Packages: kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-mt7615e kmod-mt7615-firmware kmod-btmtkuart swconfig 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: elecom,wrc-2533gent
+
+
+Target-Profile-Description:
+Build firmware images for Elecom WRC-2533GENT
+
+
+
+@@
+
+Target-Profile: DEVICE_mediatek_mt7622-rfb1
+Target-Profile-Name: MediaTek MTK7622 rfb1 AP
+Target-Profile-Packages: kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7622-rfb1
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek MTK7622 rfb1 AP
+
+
+
+@@
+
+Target-Profile: DEVICE_mediatek_mt7622-ubi
+Target-Profile-Name: MediaTek MTK7622 AP (UBI)
+Target-Profile-Packages: kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7622,ubi
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek MTK7622 AP (UBI)
+
+
+
+@@
+
+Target-Profile: DEVICE_ubnt_unifi-6-lr
+Target-Profile-Name: Ubiquiti UniFi 6 LR
+Target-Profile-Packages: kmod-mt7915e 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: ubnt,unifi-6-lr
+
+
+Target-Profile-Description:
+Build firmware images for Ubiquiti UniFi 6 LR
+
+
+
+@@
+
+Target: mediatek/mt7623
+Target-Board: mediatek
+Target-Name: MT7623
+Target-Arch: arm
+Target-Arch-Packages: arm_cortex-a7_neon-vfpv4
+Target-Features: arm_v7 dt ext4 fpu gpio nand pci pcie ramdisk rtc squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe
+CPU-Type: cortex-a7+neon-vfpv4
+Linux-Version: 5.4.225
+Linux-Testing-Version: 5.4.225
+Linux-Release: 1
+Linux-Kernel-Arch: arm
+Target-Description:
+	Build firmware images for MediaTek mt7623 ARM based boards.
+@@
+Default-Packages: base-files ca-bundle dropbear fstools libc libgcc libustream-wolfssl logd mtd netifd opkg uci uclient-fetch urandom-seed urngd busybox procd dnsmasq firewall ip6tables iptables kmod-ipt-offload odhcp6c odhcpd-ipv6only ppp ppp-mod-pppoe kmod-leds-gpio kmod-gpio-button-hotplug 
+Target-Profile: DEVICE_bpi_bananapi-r2
+Target-Profile-Name: Bpi Banana Pi R2
+Target-Profile-Packages: kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 kmod-mmc mkf2fs e2fsprogs kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: bananapi,bpi-r2
+
+
+Target-Profile-Description:
+Build firmware images for Bpi Banana Pi R2
+
+
+
+@@
+
+Target-Profile: DEVICE_unielec_u7623-emmc
+Target-Profile-Name: UniElec U7623 eMMC
+Target-Profile-Packages: kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 kmod-mmc mkf2fs e2fsprogs kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: unielec,u7623-02-emmc-512m
+
+
+Target-Profile-Description:
+Build firmware images for UniElec U7623 eMMC
+
+
+
+@@
+
+Target-Profile: DEVICE_unielec_u7623-02-emmc-512m-legacy
+Target-Profile-Name: UniElec U7623-02 eMMC/512MiB RAM (legacy image)
+Target-Profile-Packages: kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 kmod-mmc mkf2fs e2fsprogs kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: unielec,u7623-02-emmc-512m
+
+
+Target-Profile-Description:
+Build firmware images for UniElec U7623-02 eMMC/512MiB RAM (legacy image)
+
+
+
+@@
+
+Target: mediatek/mt7629
+Target-Board: mediatek
+Target-Name: MT7629
+Target-Arch: arm
+Target-Arch-Packages: arm_cortex-a7
+Target-Features: arm_v7 dt gpio nand pci pcie ramdisk squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe
+CPU-Type: cortex-a7
+Linux-Version: 5.4.225
+Linux-Testing-Version: 5.4.225
+Linux-Release: 1
+Linux-Kernel-Arch: arm
+Target-Description:
+	Build firmware images for MediaTek mt7629 ARM based boards.
+@@
+Default-Packages: base-files ca-bundle dropbear fstools libc libgcc libustream-wolfssl logd mtd netifd opkg uci uclient-fetch urandom-seed urngd busybox procd dnsmasq firewall ip6tables iptables kmod-ipt-offload odhcp6c odhcpd-ipv6only ppp ppp-mod-pppoe kmod-leds-gpio kmod-gpio-button-hotplug 
+Target-Profile: DEVICE_mediatek_mt7629-rfb
+Target-Profile-Name: MediaTek MT7629 rfb AP
+Target-Profile-Packages: swconfig 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7629-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek MT7629 rfb AP
+
+
+
+@@
+
+Target: mediatek/mt7986
+Target-Board: mediatek
+Target-Name: MT7986
+Target-Arch: aarch64
+Target-Arch-Packages: aarch64_cortex-a53
+Target-Features: dt gpio nand pci ramdisk rtc squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -mcpu=cortex-a53
+CPU-Type: cortex-a53
+Linux-Version: 5.4.225
+Linux-Testing-Version: 5.4.225
+Linux-Release: 1
+Linux-Kernel-Arch: arm64
+Target-Description:
+	Build firmware images for MediaTek MT7986 ARM based boards.
+@@
+Default-Packages: base-files ca-bundle dropbear fstools libc libgcc libustream-wolfssl logd mtd netifd opkg uci uclient-fetch urandom-seed urngd busybox procd dnsmasq firewall ip6tables iptables kmod-ipt-offload odhcp6c odhcpd-ipv6only ppp ppp-mod-pppoe kmod-leds-gpio kmod-gpio-button-hotplug 
+Target-Profile: Default
+Target-Profile-Name: Default Profile (minimum package set)
+Target-Profile-Packages:  
+Target-Profile-Description:
+	Default package set compatible with most boards.
+@@
+
+Target-Profile: DEVICE_mt7986a-ax6000-spim-nand-rfb-sb
+Target-Profile-Name: MediaTek mt7986a-ax6000-spim-nand-rfb-sb (SPI-NAND,UBI)
+Target-Profile-Packages: uboot-envtools dmsetup 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986a-spim-snand-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986a-ax6000-spim-nand-rfb-sb (SPI-NAND,UBI)
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986b-ax6000-spim-nand-rfb-sb
+Target-Profile-Name: MediaTek mt7986b-ax6000-spim-nand-rfb-sb (SPI-NAND,UBI)
+Target-Profile-Packages: uboot-envtools dmsetup 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986b-spim-snand-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986b-ax6000-spim-nand-rfb-sb (SPI-NAND,UBI)
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986a-ax6000-spim-nor-rfb
+Target-Profile-Name: MediaTek mt7986a-ax6000-spim-nor-rfb
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986a-nor-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986a-ax6000-spim-nor-rfb
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986a-ax6000-spim-nand-rfb
+Target-Profile-Name: MediaTek mt7986a-ax6000-spim-nand-rfb (SPI-NAND,UBI)
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986a-spim-snand-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986a-ax6000-spim-nand-rfb (SPI-NAND,UBI)
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986a-ax8400-spim-nand-rfb
+Target-Profile-Name: MediaTek mt7986a-ax8400-spim-nand-rfb (SPI-NAND,UBI)
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986a-spim-snand-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986a-ax8400-spim-nand-rfb (SPI-NAND,UBI)
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986a-ax6000-snfi-nand-rfb
+Target-Profile-Name: MediaTek mt7986a-ax6000-snfi-nand-rfb (SPI-NAND,UBI)
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986a-snfi-snand-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986a-ax6000-snfi-nand-rfb (SPI-NAND,UBI)
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986a-ax6000-emmc-rfb
+Target-Profile-Name: MediaTek mt7986a-ax6000-emmc-rfb
+Target-Profile-Packages: mkf2fs e2fsprogs blkid blockdev losetup kmod-fs-ext4 kmod-mmc kmod-fs-f2fs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986a-emmc-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986a-ax6000-emmc-rfb
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986a-ax7800-emmc-rfb
+Target-Profile-Name: MediaTek mt7986a-ax7800-emmc-rfb
+Target-Profile-Packages: mkf2fs e2fsprogs blkid blockdev losetup kmod-fs-ext4 kmod-mmc kmod-fs-f2fs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986a-emmc-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986a-ax7800-emmc-rfb
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986a-ax6000-2500wan-spim-nor-rfb
+Target-Profile-Name: MediaTek mt7986a-ax6000-2500wan-spim-nor-rfb
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986a-2500wan-nor-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986a-ax6000-2500wan-spim-nor-rfb
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986a-ax6000-2500wan-spim-nand-rfb
+Target-Profile-Name: MediaTek mt7986a-ax6000-2500wan-spim-nand-rfb (SPI-NAND,UBI)
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986a-2500wan-spim-snand-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986a-ax6000-2500wan-spim-nand-rfb (SPI-NAND,UBI)
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986a-ax6000-2500wan-gsw-spim-nand-rfb
+Target-Profile-Name: MediaTek mt7986a-ax6000-2500wan-gsw-spim-nand-rfb (SPI-NAND,UBI)
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986a-2500wan-gsw-spim-snand-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986a-ax6000-2500wan-gsw-spim-nand-rfb (SPI-NAND,UBI)
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986a-ax6000-2500wan-sd-rfb
+Target-Profile-Name: MediaTek mt7986a-ax6000-2500wan-sd-rfb
+Target-Profile-Packages: mkf2fs e2fsprogs blkid blockdev losetup kmod-fs-ext4 kmod-mmc kmod-fs-f2fs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986b-2500wan-sd-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986a-ax6000-2500wan-sd-rfb
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986a-ax8400-2500wan-spim-nand-rfb
+Target-Profile-Name: MediaTek mt7986a-ax8400-2500wan-spim-nand-rfb (SPI-NAND,UBI)
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986a-2500wan-spim-snand-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986a-ax8400-2500wan-spim-nand-rfb (SPI-NAND,UBI)
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986a-ax7800-spim-nor-rfb
+Target-Profile-Name: MediaTek mt7986a-ax7800-spim-nor-rfb
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986a-nor-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986a-ax7800-spim-nor-rfb
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986a-ax7800-spim-nand-rfb
+Target-Profile-Name: MediaTek mt7986a-ax7800-spim-nand-rfb (SPI-NAND,UBI)
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986a-spim-snand-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986a-ax7800-spim-nand-rfb (SPI-NAND,UBI)
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986a-ax7800-2500wan-spim-nor-rfb
+Target-Profile-Name: MediaTek mt7986a-ax7800-2500wan-spim-nor-rfb
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986a-2500wan-nor-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986a-ax7800-2500wan-spim-nor-rfb
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986a-ax7800-2500wan-spim-nand-rfb
+Target-Profile-Name: MediaTek mt7986a-ax7800-2500wan-spim-nand-rfb (SPI-NAND,UBI)
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986a-2500wan-spim-snand-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986a-ax7800-2500wan-spim-nand-rfb (SPI-NAND,UBI)
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986b-ax6000-spim-nor-rfb
+Target-Profile-Name: MediaTek mt7986b-ax6000-spim-nor-rfb
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986b-nor-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986b-ax6000-spim-nor-rfb
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986b-ax6000-spim-nand-rfb
+Target-Profile-Name: MediaTek mt7986b-ax6000-spim-nand-rfb (SPI-NAND,UBI)
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986b-spim-snand-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986b-ax6000-spim-nand-rfb (SPI-NAND,UBI)
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986b-ax6000-snfi-nand-rfb
+Target-Profile-Name: MediaTek mt7986b-ax6000-snfi-nand-rfb (SPI-NAND,UBI)
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986b-snfi-snand-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986b-ax6000-snfi-nand-rfb (SPI-NAND,UBI)
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986b-ax6000-emmc-rfb
+Target-Profile-Name: MediaTek mt7986b-ax6000-emmc-rfb
+Target-Profile-Packages: mkf2fs e2fsprogs blkid blockdev losetup kmod-fs-ext4 kmod-mmc kmod-fs-f2fs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986b-emmc-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986b-ax6000-emmc-rfb
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986b-ax6000-2500wan-spim-nor-rfb
+Target-Profile-Name: MediaTek mt7986b-ax6000-2500wan-spim-nor-rfb
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986b-nor-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986b-ax6000-2500wan-spim-nor-rfb
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986b-ax6000-2500wan-spim-nand-rfb
+Target-Profile-Name: MediaTek mt7986b-ax6000-2500wan-spim-nand-rfb (SPI-NAND,UBI)
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986b-2500wan-spim-snand-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986b-ax6000-2500wan-spim-nand-rfb (SPI-NAND,UBI)
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986b-ax6000-2500wan-gsw-spim-nand-rfb
+Target-Profile-Name: MediaTek mt7986b-ax6000-2500wan-gsw-spim-nand-rfb (SPI-NAND,UBI)
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986b-2500wan-gsw-spim-snand-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986b-ax6000-2500wan-gsw-spim-nand-rfb (SPI-NAND,UBI)
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986b-ax6000-2500wan-snfi-nand-rfb
+Target-Profile-Name: MediaTek mt7986b-ax6000-2500wan-snfi-nand-rfb (SPI-NAND,UBI)
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986b-2500wan-snfi-snand-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986b-ax6000-2500wan-snfi-nand-rfb (SPI-NAND,UBI)
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7986b-ax6000-2500wan-sd-rfb
+Target-Profile-Name: MediaTek mt7986b-ax6000-2500wan-sd-rfb
+Target-Profile-Packages: mkf2fs e2fsprogs blkid blockdev losetup kmod-fs-ext4 kmod-mmc kmod-fs-f2fs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986b-2500wan-sd-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7986b-ax6000-2500wan-sd-rfb
+
+
+
+@@
+
+Target-Profile: DEVICE_mediatek_mt7986-fpga
+Target-Profile-Name: MediaTek MTK7986 FPGA
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986-fpga
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek MTK7986 FPGA
+
+
+
+@@
+
+Target-Profile: DEVICE_mediatek_mt7986-fpga-ubi
+Target-Profile-Name: MediaTek MTK7986 FPGA (UBI)
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7986-fpga,ubi
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek MTK7986 FPGA (UBI)
+
+
+
+@@
+
+Target: mediatek/mt7981
+Target-Board: mediatek
+Target-Name: MT7981
+Target-Arch: aarch64
+Target-Arch-Packages: aarch64_cortex-a53
+Target-Features: dt gpio nand pci ramdisk rtc squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -mcpu=cortex-a53
+CPU-Type: cortex-a53
+Linux-Version: 5.4.225
+Linux-Testing-Version: 5.4.225
+Linux-Release: 1
+Linux-Kernel-Arch: arm64
+Target-Description:
+	Build firmware images for MediaTek MT7981 ARM based boards.
+@@
+Default-Packages: base-files ca-bundle dropbear fstools libc libgcc libustream-wolfssl logd mtd netifd opkg uci uclient-fetch urandom-seed urngd busybox procd dnsmasq firewall ip6tables iptables kmod-ipt-offload odhcp6c odhcpd-ipv6only ppp ppp-mod-pppoe kmod-leds-gpio kmod-gpio-button-hotplug 
+Target-Profile: DEVICE_mt7981-spim-nor-rfb
+Target-Profile-Name: MediaTek mt7981-spim-nor-rfb
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7981-spim-nor-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7981-spim-nor-rfb
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7981-spim-nand-2500wan-gmac2
+Target-Profile-Name: MediaTek mt7981-spim-nand-2500wan-gmac2
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7981-spim-snand-2500wan-gmac2-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7981-spim-nand-2500wan-gmac2
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7981-spim-nand-rfb
+Target-Profile-Name: MediaTek mt7981-spim-nand-rfb
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7981-spim-snand-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7981-spim-nand-rfb
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7981-spim-nand-gsw
+Target-Profile-Name: MediaTek mt7981-spim-nand-gsw
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7981-rfb,ubi
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7981-spim-nand-gsw
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7981-emmc-rfb
+Target-Profile-Name: MediaTek mt7981-emmc-rfb
+Target-Profile-Packages: mkf2fs e2fsprogs blkid blockdev losetup kmod-fs-ext4 kmod-mmc kmod-fs-f2fs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7981-emmc-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7981-emmc-rfb
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7981-sd-rfb
+Target-Profile-Name: MediaTek mt7981-sd-rfb
+Target-Profile-Packages: mkf2fs e2fsprogs blkid blockdev losetup kmod-fs-ext4 kmod-mmc kmod-fs-f2fs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7981-sd-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7981-sd-rfb
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7981-snfi-nand-2500wan-p5
+Target-Profile-Name: MediaTek mt7981-snfi-nand-2500wan-p5
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7981-snfi-snand-pcie-2500wan-p5-rfb
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7981-snfi-nand-2500wan-p5
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7981-fpga-spim-nor
+Target-Profile-Name: MediaTek mt7981-fpga-spim-nor
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7981-fpga-nor
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7981-fpga-spim-nor
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7981-fpga-snfi-nand
+Target-Profile-Name: MediaTek mt7981-fpga-snfi-nand
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7981-fpga-snfi-snand
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7981-fpga-snfi-nand
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7981-fpga-spim-nand
+Target-Profile-Name: MediaTek mt7981-fpga-spim-nand
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7981-fpga-spim-snand
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7981-fpga-spim-nand
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7981-fpga-emmc
+Target-Profile-Name: MediaTek mt7981-fpga-emmc
+Target-Profile-Packages: mkf2fs e2fsprogs blkid blockdev losetup kmod-fs-ext4 kmod-mmc kmod-fs-f2fs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7981-fpga-emmc
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7981-fpga-emmc
+
+
+
+@@
+
+Target-Profile: DEVICE_mt7981-fpga-sd
+Target-Profile-Name: MediaTek mt7981-fpga-sd
+Target-Profile-Packages: mkf2fs e2fsprogs blkid blockdev losetup kmod-fs-ext4 kmod-mmc kmod-fs-f2fs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7981-fpga-sd
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7981-fpga-sd
+
+
+
+@@
+
+Target: mediatek/mt7988
+Target-Board: mediatek
+Target-Name: MT7988
+Target-Arch: aarch64
+Target-Arch-Packages: aarch64_cortex-a53
+Target-Features: dt gpio nand pci ramdisk rtc squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -mcpu=cortex-a53
+CPU-Type: cortex-a53
+Linux-Version: 5.4.225
+Linux-Testing-Version: 5.4.225
+Linux-Release: 1
+Linux-Kernel-Arch: arm64
+Target-Description:
+	Build firmware images for MediaTek MT7988 ARM based boards.
+@@
+Default-Packages: base-files ca-bundle dropbear fstools libc libgcc libustream-wolfssl logd mtd netifd opkg uci uclient-fetch urandom-seed urngd busybox procd dnsmasq firewall ip6tables iptables kmod-ipt-offload odhcp6c odhcpd-ipv6only ppp ppp-mod-pppoe kmod-leds-gpio kmod-gpio-button-hotplug 
+Target-Profile: DEVICE_mediatek_mt7988a-gsw-10g-spim-nand
+Target-Profile-Name: MediaTek mt7988a-gsw-10g-spim-nand
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7988a-gsw-10g-spim-snand
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7988a-gsw-10g-spim-nand
+
+
+
+@@
+
+Target-Profile: DEVICE_mediatek_mt7988a-gsw-10g-spim-nand-sb
+Target-Profile-Name: MediaTek mt7988a-gsw-10g-spim-nand-sb
+Target-Profile-Packages: uboot-envtools dmsetup 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7988a-gsw-10g-spim-snand
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7988a-gsw-10g-spim-nand-sb
+
+
+
+@@
+
+Target-Profile: DEVICE_mediatek_mt7988a-gsw-10g-spim-nand-4pcie
+Target-Profile-Name: MediaTek mt7988a-gsw-10g-spim-nand-4pcie
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7988a-gsw-10g-spim-snand-4pcie
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7988a-gsw-10g-spim-nand-4pcie
+
+
+
+@@
+
+Target-Profile: DEVICE_mediatek_mt7988a-gsw-10g-sfp-spim-nand
+Target-Profile-Name: MediaTek mt7988a-gsw-10g-sfp-spim-nand
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7988a-gsw-10g-sfp-spim-snand
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7988a-gsw-10g-sfp-spim-nand
+
+
+
+@@
+
+Target-Profile: DEVICE_mediatek_mt7988a-dsa-10g-spim-nand
+Target-Profile-Name: MediaTek mt7988a-dsa-10g-spim-nand
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7988a-dsa-10g-spim-snand
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7988a-dsa-10g-spim-nand
+
+
+
+@@
+
+Target-Profile: DEVICE_mediatek_mt7988a-dsa-e2p5g-spim-nand
+Target-Profile-Name: MediaTek mt7988a-dsa-e2p5g-spim-nand
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7988a-dsa-e2p5g-spim-nand
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7988a-dsa-e2p5g-spim-nand
+
+
+
+@@
+
+Target-Profile: DEVICE_mediatek_mt7988a-dsa-i2p5g-spim-nand
+Target-Profile-Name: MediaTek mt7988a-dsa-i2p5g-spim-nand
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7988a-dsa-i2p5g-spim-nand
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7988a-dsa-i2p5g-spim-nand
+
+
+
+@@
+
+Target-Profile: DEVICE_mediatek_mt7988a-dsa-10g-snfi-nand
+Target-Profile-Name: MediaTek mt7988a-dsa-10g-snfi-nand
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7988a-dsa-10g-snfi-nand
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7988a-dsa-10g-snfi-nand
+
+
+
+@@
+
+Target-Profile: DEVICE_mediatek_mt7988a-dsa-10g-spim-nor
+Target-Profile-Name: MediaTek mt7988a-dsa-10g-spim-nor
+Target-Profile-Packages:  
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7988a-dsa-10g-spim-nor
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7988a-dsa-10g-spim-nor
+
+
+
+@@
+
+Target-Profile: DEVICE_mediatek_mt7988a-dsa-10g-emmc
+Target-Profile-Name: MediaTek mt7988a-dsa-10g-emmc
+Target-Profile-Packages: mkf2fs e2fsprogs blkid blockdev losetup kmod-fs-ext4 kmod-mmc kmod-fs-f2fs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7988a-dsa-10g-emmc
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7988a-dsa-10g-emmc
+
+
+
+@@
+
+Target-Profile: DEVICE_mediatek_mt7988a-dsa-10g-sd
+Target-Profile-Name: MediaTek mt7988a-dsa-10g-sd
+Target-Profile-Packages: mkf2fs e2fsprogs blkid blockdev losetup kmod-fs-ext4 kmod-mmc kmod-fs-f2fs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 
+Target-Profile-hasImageMetadata: 1
+Target-Profile-SupportedDevices: mediatek,mt7988a-dsa-10g-sd
+
+
+Target-Profile-Description:
+Build firmware images for MediaTek mt7988a-dsa-10g-sd
+
+
+
+@@
+
+
