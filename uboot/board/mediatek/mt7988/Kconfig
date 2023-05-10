@@ -1,0 +1,9 @@
+if TARGET_MT7988
+
+config SYS_BOARD
+	default "mt7988"
+
+config SYS_CONFIG_NAME
+	default "mt7988"
+
+endif
