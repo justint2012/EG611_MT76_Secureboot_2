@@ -206,7 +206,7 @@ function simple_convert() {
 
 function convert_tx_mode() {
     # Remove leading zeros
-    local tx_mode=$(echo $1 | sed 's/^0*//')
+    local tx_mode=$(echo $1 | sed -r 's/0+([0-9]+)/\1/g')
 
     if [ "$tx_mode" = "0" ]; then
         echo "cck"
@@ -956,7 +956,7 @@ if [ "${cmd_type}" = "set" ]; then
             fi
             param_new=${param}
             if [ "${cmd}" = "ATETXCNT" ] && [ "${param}" = "0" ]; then
-                param_new="10000000"
+                param_new="0xFFFFFFFF"
             fi
             ;;
         "ATETXANT"|"ATERXANT")

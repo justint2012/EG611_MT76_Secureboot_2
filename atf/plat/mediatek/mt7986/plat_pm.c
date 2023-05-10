@@ -525,6 +525,25 @@ static void __dead2 plat_system_reset(void)
 	panic();
 }
 
+static int __dead2 plat_system_reset2(int is_vendor, int reset_type,
+						u_register_t cookie)
+{
+	/* Write the System Configuration Control Register */
+	INFO("MTK System Exception Reset\n");
+
+	mmio_setbits_32(MTK_DDR_RESERVE_MODE, (MTK_DDR_RESERVE_ENABLE | MTK_DDR_RESERVE_KEY));
+	mmio_clrsetbits_32(MTK_WDT_BASE,
+			   (MTK_WDT_MODE_DUAL_MODE | MTK_WDT_MODE_IRQ),
+			   MTK_WDT_MODE_KEY);
+	mmio_setbits_32(MTK_WDT_BASE, (MTK_WDT_MODE_KEY | MTK_WDT_MODE_EXTEN));
+	mmio_setbits_32(MTK_WDT_RESTART, MTK_WDT_RESTART_KEY);
+	mmio_setbits_32(MTK_WDT_SWRST, MTK_WDT_SWRST_KEY);
+
+	wfi();
+	ERROR("MTK System Reset: operation not handled.\n");
+	panic();
+}
+
 #if !PSCI_EXTENDED_STATE_ID
 static int plat_validate_power_state(unsigned int power_state,
 				     psci_power_state_t *req_state)
@@ -622,6 +641,7 @@ static const plat_psci_ops_t plat_plat_pm_ops = {
 	.pwr_domain_suspend_finish	= plat_power_domain_suspend_finish,
 	.system_off			= plat_system_off,
 	.system_reset			= plat_system_reset,
+	.system_reset2			= plat_system_reset2,
 	.validate_power_state		= plat_validate_power_state,
 	.get_sys_suspend_power_state	= plat_get_sys_suspend_power_state,
 };

@@ -1,8 +1,24 @@
+From 23c21db36b55ae1fe2f9b2a2b44f59d9cbe09f5d Mon Sep 17 00:00:00 2001
+From: mtk27745 <rex.lu@mediatek.com>
+Date: Thu, 13 Apr 2023 20:13:34 +0800
+Subject: [PATCH] 9999-2-flow-offload-add-mtkhnat-flow-accounting.patch
+
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c   |  11 +-
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h   |   1 +
+ drivers/net/ethernet/mediatek/mtk_ppe.c       | 131 +++++++++++++++++-
+ drivers/net/ethernet/mediatek/mtk_ppe.h       |  23 ++-
+ .../net/ethernet/mediatek/mtk_ppe_debugfs.c   |  10 +-
+ .../net/ethernet/mediatek/mtk_ppe_offload.c   |   7 +
+ drivers/net/ethernet/mediatek/mtk_ppe_regs.h  |  14 ++
+ net/netfilter/xt_FLOWOFFLOAD.c                |   2 +-
+ 8 files changed, 191 insertions(+), 8 deletions(-)
+
 diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 4f53794..dc5d050 100644
+index a48ba115a..babaa0eda 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -3944,7 +3944,8 @@ static int mtk_probe(struct platform_device *pdev)
+@@ -4452,7 +4452,8 @@ static int mtk_probe(struct platform_device *pdev)
  		for (i = 0; i < eth->ppe_num; i++) {
  			eth->ppe[i] = mtk_ppe_init(eth,
  						   eth->base + MTK_ETH_PPE_BASE + i * 0x400,
@@ -12,7 +28,7 @@ index 4f53794..dc5d050 100644
  			if (!eth->ppe[i]) {
  				err = -ENOMEM;
  				goto err_free_dev;
-@@ -4057,6 +4058,7 @@ static const struct mtk_soc_data mt2701_data = {
+@@ -4568,6 +4569,7 @@ static const struct mtk_soc_data mt2701_data = {
  	.required_clks = MT7623_CLKS_BITMAP,
  	.required_pctl = true,
  	.has_sram = false,
@@ -20,7 +36,7 @@ index 4f53794..dc5d050 100644
  	.hash_way = 2,
  	.offload_version = 2,
  	.txrx = {
-@@ -4073,6 +4075,7 @@ static const struct mtk_soc_data mt7621_data = {
+@@ -4584,6 +4586,7 @@ static const struct mtk_soc_data mt7621_data = {
  	.required_clks = MT7621_CLKS_BITMAP,
  	.required_pctl = false,
  	.has_sram = false,
@@ -28,7 +44,7 @@ index 4f53794..dc5d050 100644
  	.hash_way = 2,
  	.offload_version = 2,
  	.txrx = {
-@@ -4090,6 +4093,7 @@ static const struct mtk_soc_data mt7622_data = {
+@@ -4601,6 +4604,7 @@ static const struct mtk_soc_data mt7622_data = {
  	.required_clks = MT7622_CLKS_BITMAP,
  	.required_pctl = false,
  	.has_sram = false,
@@ -36,7 +52,7 @@ index 4f53794..dc5d050 100644
  	.hash_way = 2,
  	.offload_version = 2,
  	.txrx = {
-@@ -4106,6 +4110,7 @@ static const struct mtk_soc_data mt7623_data = {
+@@ -4617,6 +4621,7 @@ static const struct mtk_soc_data mt7623_data = {
  	.required_clks = MT7623_CLKS_BITMAP,
  	.required_pctl = true,
  	.has_sram = false,
@@ -44,7 +60,7 @@ index 4f53794..dc5d050 100644
  	.hash_way = 2,
  	.offload_version = 2,
  	.txrx = {
-@@ -4123,6 +4128,7 @@ static const struct mtk_soc_data mt7629_data = {
+@@ -4634,6 +4639,7 @@ static const struct mtk_soc_data mt7629_data = {
  	.required_clks = MT7629_CLKS_BITMAP,
  	.required_pctl = false,
  	.has_sram = false,
@@ -52,7 +68,7 @@ index 4f53794..dc5d050 100644
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
  		.rxd_size = sizeof(struct mtk_rx_dma),
-@@ -4138,6 +4144,7 @@ static const struct mtk_soc_data mt7986_data = {
+@@ -4649,6 +4655,7 @@ static const struct mtk_soc_data mt7986_data = {
  	.required_clks = MT7986_CLKS_BITMAP,
  	.required_pctl = false,
  	.has_sram = true,
@@ -60,7 +76,7 @@ index 4f53794..dc5d050 100644
  	.hash_way = 4,
  	.offload_version = 2,
  	.txrx = {
-@@ -4155,6 +4162,7 @@ static const struct mtk_soc_data mt7981_data = {
+@@ -4666,6 +4673,7 @@ static const struct mtk_soc_data mt7981_data = {
  	.required_clks = MT7981_CLKS_BITMAP,
  	.required_pctl = false,
  	.has_sram = true,
@@ -68,7 +84,7 @@ index 4f53794..dc5d050 100644
  	.hash_way = 4,
  	.offload_version = 2,
  	.txrx = {
-@@ -4171,6 +4179,7 @@ static const struct mtk_soc_data rt5350_data = {
+@@ -4697,6 +4705,7 @@ static const struct mtk_soc_data rt5350_data = {
  	.required_clks = MT7628_CLKS_BITMAP,
  	.required_pctl = false,
  	.has_sram = false,
@@ -77,10 +93,10 @@ index 4f53794..dc5d050 100644
  		.txd_size = sizeof(struct mtk_tx_dma),
  		.rxd_size = sizeof(struct mtk_rx_dma),
 diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-index f659633..5e16fa8 100644
+index 4dd3ca356..f886876a9 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -1213,6 +1213,7 @@ struct mtk_soc_data {
+@@ -1476,6 +1476,7 @@ struct mtk_soc_data {
  	u8		offload_version;
  	netdev_features_t hw_features;
  	bool		has_sram;
@@ -89,7 +105,7 @@ index f659633..5e16fa8 100644
  		u32	txd_size;
  		u32	rxd_size;
 diff --git a/drivers/net/ethernet/mediatek/mtk_ppe.c b/drivers/net/ethernet/mediatek/mtk_ppe.c
-index 918aa22..8c036cd 100755
+index efb32d142..84b9456b5 100755
 --- a/drivers/net/ethernet/mediatek/mtk_ppe.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
 @@ -74,6 +74,46 @@ static int mtk_ppe_wait_busy(struct mtk_ppe *ppe)
@@ -139,22 +155,26 @@ index 918aa22..8c036cd 100755
  static void mtk_ppe_cache_clear(struct mtk_ppe *ppe)
  {
  	ppe_set(ppe, MTK_PPE_CACHE_CTL, MTK_PPE_CACHE_CTL_CLEAR);
-@@ -412,6 +452,14 @@ __mtk_foe_entry_clear(struct mtk_ppe *ppe, struct mtk_flow_entry *entry)
+@@ -425,6 +465,18 @@ __mtk_foe_entry_clear(struct mtk_ppe *ppe, struct mtk_flow_entry *entry)
+ 		ppe->foe_table[entry->hash].ib1 |= FIELD_PREP(MTK_FOE_IB1_STATE,
  							      MTK_FOE_STATE_INVALID);
  		dma_wmb();
 +
 +		if (ppe->accounting) {
-+			struct mtk_foe_accounting *acct;
++			struct mtk_foe_accounting *acct, *acct_updated;
 +
 +			acct = ppe->acct_table + entry->hash * sizeof(*acct);
 +			acct->packets = 0;
 +			acct->bytes = 0;
++
++			acct_updated = ppe->acct_updated_table + entry->hash * sizeof(*acct_updated);
++			acct_updated->packets = 0;
++			acct_updated->bytes = 0;
 +		}
-	}
+ 	}
  	entry->hash = 0xffff;
  
- 	if (entry->type != MTK_FLOW_TYPE_L2_SUBFLOW)
-@@ -513,6 +560,16 @@ __mtk_foe_entry_commit(struct mtk_ppe *ppe, struct mtk_foe_entry *entry,
+@@ -527,6 +579,16 @@ __mtk_foe_entry_commit(struct mtk_ppe *ppe, struct mtk_foe_entry *entry,
  	wmb();
  	hwe->ib1 = entry->ib1;
  
@@ -171,7 +191,7 @@ index 918aa22..8c036cd 100755
  	dma_wmb();
  
  	mtk_ppe_cache_clear(ppe);
-@@ -618,8 +675,6 @@ void __mtk_ppe_check_skb(struct mtk_ppe *ppe, struct sk_buff *skb, u16 hash)
+@@ -636,8 +698,6 @@ void __mtk_ppe_check_skb(struct mtk_ppe *ppe, struct sk_buff *skb, u16 hash)
  		}
  
  		if (found || !mtk_flow_entry_match(entry, hwe)) {
@@ -180,14 +200,14 @@ index 918aa22..8c036cd 100755
  			continue;
  		}
  
-@@ -676,12 +731,40 @@ int mtk_foe_entry_idle_time(struct mtk_ppe *ppe, struct mtk_flow_entry *entry)
+@@ -694,12 +754,44 @@ int mtk_foe_entry_idle_time(struct mtk_ppe *ppe, struct mtk_flow_entry *entry)
  	return __mtk_foe_entry_idle_time(ppe, entry->data.ib1);
  }
  
 -struct mtk_ppe *mtk_ppe_init(struct mtk_eth *eth, void __iomem *base, int version, int way, int id)
 +struct mtk_foe_accounting *mtk_foe_entry_get_mib(struct mtk_ppe *ppe, u32 index, struct mtk_foe_accounting *diff)
 +{
-+	struct mtk_foe_accounting *acct;
++	struct mtk_foe_accounting *acct, *acct_updated;
 +	int size = sizeof(struct mtk_foe_accounting);
 +	u64 bytes, packets;
 +
@@ -203,8 +223,12 @@ index 918aa22..8c036cd 100755
 +	acct->packets += packets;
 +
 +	if (diff) {
-+		diff->bytes = bytes;
-+		diff->packets = packets;
++		acct_updated = ppe->acct_updated_table + index * size;
++
++		diff->bytes = acct->bytes - acct_updated->bytes;
++		diff->packets = acct->packets - acct_updated->packets;
++		acct_updated->bytes += diff->bytes;
++		acct_updated->packets += diff->packets;
 +	}
 +
 +	return acct;
@@ -218,11 +242,11 @@ index 918aa22..8c036cd 100755
 +	struct mtk_mib_entry *mib;
  	struct mtk_ppe *ppe;
  	struct hlist_head *flow;
-+	struct mtk_foe_accounting *acct;
++	struct mtk_foe_accounting *acct, *acct_updated;
  
  	ppe = devm_kzalloc(dev, sizeof(*ppe), GFP_KERNEL);
  	if (!ppe)
-@@ -698,6 +781,7 @@ struct mtk_ppe *mtk_ppe_init(struct mtk_eth *eth, void __iomem *base, int versio
+@@ -716,6 +808,7 @@ struct mtk_ppe *mtk_ppe_init(struct mtk_eth *eth, void __iomem *base, int versio
  	ppe->version = version;
  	ppe->way = way;
  	ppe->id = id;
@@ -230,7 +254,7 @@ index 918aa22..8c036cd 100755
  
  	foe = dmam_alloc_coherent(ppe->dev, MTK_PPE_ENTRIES * sizeof(*foe),
  				  &ppe->foe_phys, GFP_KERNEL);
-@@ -713,6 +797,24 @@ struct mtk_ppe *mtk_ppe_init(struct mtk_eth *eth, void __iomem *base, int versio
+@@ -731,6 +824,31 @@ struct mtk_ppe *mtk_ppe_init(struct mtk_eth *eth, void __iomem *base, int versio
  
  	ppe->foe_flow = flow;
  
@@ -250,14 +274,21 @@ index 918aa22..8c036cd 100755
 +			return NULL;
 +
 +		ppe->acct_table = acct;
++
++		acct_updated = devm_kzalloc(dev, MTK_PPE_ENTRIES * sizeof(*acct_updated),
++					    GFP_KERNEL);
++		if (!acct_updated)
++			return NULL;
++
++		ppe->acct_updated_table = acct_updated;
 +	}
 +
  	return ppe;
  }
  
-@@ -811,6 +949,13 @@ int mtk_ppe_start(struct mtk_ppe *ppe)
- 	ppe_w32(ppe, MTK_PPE_DEFAULT_CPU_PORT1, 0xcb777);
+@@ -832,6 +950,13 @@ int mtk_ppe_start(struct mtk_ppe *ppe)
  	ppe_w32(ppe, MTK_PPE_SBW_CTRL, 0x7f);
+ #endif
  
 +	if (ppe->accounting && ppe->mib_phys) {
 +		ppe_w32(ppe, MTK_PPE_MIB_TB_BASE, ppe->mib_phys);
@@ -270,10 +301,10 @@ index 918aa22..8c036cd 100755
  }
  
 diff --git a/drivers/net/ethernet/mediatek/mtk_ppe.h b/drivers/net/ethernet/mediatek/mtk_ppe.h
-index 3d6928c..8076e5d 100644
+index feb1a4a2a..86288b0e6 100644
 --- a/drivers/net/ethernet/mediatek/mtk_ppe.h
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.h
-@@ -270,6 +270,20 @@ struct mtk_flow_entry {
+@@ -316,6 +316,20 @@ struct mtk_flow_entry {
  	unsigned long cookie;
  };
  
@@ -294,7 +325,7 @@ index 3d6928c..8076e5d 100644
  struct mtk_ppe {
  	struct mtk_eth *eth;
  	struct device *dev;
-@@ -277,10 +291,14 @@ struct mtk_ppe {
+@@ -323,19 +337,25 @@ struct mtk_ppe {
  	int version;
  	int id;
  	int way;
@@ -309,8 +340,10 @@ index 3d6928c..8076e5d 100644
  	u16 foe_check_time[MTK_PPE_ENTRIES];
  	struct hlist_head *foe_flow;
  
-@@ -289,7 +307,8 @@ struct mtk_ppe {
+ 	struct rhashtable l2_flows;
+ 
  	void *acct_table;
++	void *acct_updated_table;
  };
  
 -struct mtk_ppe *mtk_ppe_init(struct mtk_eth *eth, void __iomem *base, int version, int way, int id);
@@ -319,7 +352,7 @@ index 3d6928c..8076e5d 100644
  int mtk_ppe_start(struct mtk_ppe *ppe);
  int mtk_ppe_stop(struct mtk_ppe *ppe);
  
-@@ -340,5 +359,6 @@ int mtk_foe_entry_set_wdma(struct mtk_foe_entry *entry, int wdma_idx, int txq,
+@@ -386,5 +406,6 @@ int mtk_foe_entry_set_wdma(struct mtk_foe_entry *entry, int wdma_idx, int txq,
  int mtk_foe_entry_commit(struct mtk_ppe *ppe, struct mtk_flow_entry *entry);
  void mtk_foe_entry_clear(struct mtk_ppe *ppe, struct mtk_flow_entry *entry);
  int mtk_foe_entry_idle_time(struct mtk_ppe *ppe, struct mtk_flow_entry *entry);
@@ -327,7 +360,7 @@ index 3d6928c..8076e5d 100644
  
  #endif
 diff --git a/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c b/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
-index f4ebe59..d713e2e 100644
+index f4ebe5944..d713e2e6f 100644
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
 @@ -81,6 +81,7 @@ mtk_ppe_debugfs_foe_show(struct seq_file *m, struct mtk_ppe *ppe, bool bind)
@@ -363,10 +396,10 @@ index f4ebe59..d713e2e 100644
  
  	return 0;
 diff --git a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-index 2f7d76d..f258539 100755
+index 039a47c59..05b5558e7 100755
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-@@ -504,6 +504,7 @@ static int
+@@ -509,6 +509,7 @@ static int
  mtk_flow_offload_stats(struct mtk_eth *eth, struct flow_cls_offload *f)
  {
  	struct mtk_flow_entry *entry;
@@ -374,7 +407,7 @@ index 2f7d76d..f258539 100755
  	u32 idle;
  	int i;
  
-@@ -516,6 +517,12 @@ mtk_flow_offload_stats(struct mtk_eth *eth, struct flow_cls_offload *f)
+@@ -521,6 +522,12 @@ mtk_flow_offload_stats(struct mtk_eth *eth, struct flow_cls_offload *f)
  	idle = mtk_foe_entry_idle_time(eth->ppe[i], entry);
  	f->stats.lastused = jiffies - idle * HZ;
  
@@ -388,10 +421,10 @@ index 2f7d76d..f258539 100755
  }
  
 diff --git a/drivers/net/ethernet/mediatek/mtk_ppe_regs.h b/drivers/net/ethernet/mediatek/mtk_ppe_regs.h
-index d319f18..9eb7a0d 100644
+index d319f1861..8d3ebe1d6 100644
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_regs.h
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_regs.h
-@@ -145,6 +146,20 @@ enum {
+@@ -145,6 +145,20 @@ enum {
  
  #define MTK_PPE_MIB_TB_BASE			0x338
  
@@ -413,10 +446,10 @@ index d319f18..9eb7a0d 100644
  #define MTK_PPE_MIB_CACHE_CTL_EN		BIT(0)
  #define MTK_PPE_MIB_CACHE_CTL_FLUSH		BIT(2)
 diff --git a/net/netfilter/xt_FLOWOFFLOAD.c b/net/netfilter/xt_FLOWOFFLOAD.c
-index 8547f4a..c175e4d 100644
+index 8547f4a48..616c76fed 100644
 --- a/net/netfilter/xt_FLOWOFFLOAD.c
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -700,12 +781,12 @@ static int __init xt_flowoffload_tg_init(void)
+@@ -700,7 +700,7 @@ static int __init xt_flowoffload_tg_init(void)
  	if (ret)
  		goto cleanup;
  
@@ -425,8 +458,6 @@ index 8547f4a..c175e4d 100644
  
  	ret = xt_register_target(&offload_tg_reg);
  	if (ret)
- 		goto cleanup2;
- 
- 	return 0;
- 
- cleanup2:
+-- 
+2.18.0
+

@@ -1,0 +1,545 @@
+From 3a87df3dbc3106e5abaa3d6df7f6f3808a8b642c Mon Sep 17 00:00:00 2001
+From: Justin Tsai <justin@gmail.com>
+Date: Wed, 10 May 2023 11:57:37 +0800
+Subject: [PATCH 06/12] [uboot] add gm uboot patch including: 1.set LED red
+ light when bootup to bootloader. uboot/board/mediatek/mt7986/mt7986_rfb.c
+ 2.include mtd lib to get mfd settings for checking username password.
+ uboot/cmd/mtd.c 3.add username/password check customization.
+ uboot/common/autoboot.c 4.add gm uboot default config file to build correct
+ settings for GM board with easy commands.
+ uboot/configs/mt7986_JIO_spim_nand_sb_rfb_defconfig
+
+---
+ uboot/board/mediatek/mt7986/mt7986_rfb.c           |  28 ++
+ uboot/cmd/mtd.c                                    |  19 ++
+ uboot/common/autoboot.c                            | 283 ++++++++++++++++++++-
+ .../configs/mt7986_JIO_spim_nand_sb_rfb_defconfig  | 103 ++++++++
+ 4 files changed, 429 insertions(+), 4 deletions(-)
+ create mode 100755 uboot/configs/mt7986_JIO_spim_nand_sb_rfb_defconfig
+
+diff --git a/uboot/board/mediatek/mt7986/mt7986_rfb.c b/uboot/board/mediatek/mt7986/mt7986_rfb.c
+index 92e9f47..0ee2aac 100644
+--- a/uboot/board/mediatek/mt7986/mt7986_rfb.c
++++ b/uboot/board/mediatek/mt7986/mt7986_rfb.c
+@@ -12,9 +12,37 @@
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
++
++#include <errno.h>
++#include <asm/gpio.h>
++#include <command.h>
++
++int rgb_led_set(int gpio, int value)
++{
++	int ret;
++
++	ret = gpio_request(gpio, "");
++	if (ret && ret != -EBUSY) {
++		printf("gpio: requesting pin %u failed\n", gpio);
++		return -1;
++	} else {
++		gpio_direction_output(gpio, value);
++		gpio_free(gpio);
++	}
++
++	return 0;
++}
++
++
+ int board_init(void)
+ {
+ 	gd->bd->bi_boot_params = CONFIG_SYS_SDRAM_BASE + 0x100;
++	
++	rgb_led_set(12, 0);//R
++	rgb_led_set(13, 1);//G
++	rgb_led_set(14, 1);//B
++
++
+ 	return 0;
+ }
+ 
+diff --git a/uboot/cmd/mtd.c b/uboot/cmd/mtd.c
+index 7bd6ca2..a04a509 100644
+--- a/uboot/cmd/mtd.c
++++ b/uboot/cmd/mtd.c
+@@ -33,6 +33,20 @@ static struct mtd_info *get_mtd_by_name(const char *name)
+ 	return mtd;
+ }
+ 
++struct mtd_info *gm_get_mtd_by_name(const char *name)
++{
++	struct mtd_info *mtd;
++
++	mtd_probe_devices();
++
++	mtd = get_mtd_device_nm(name);
++	if (IS_ERR_OR_NULL(mtd))
++		printf("MTD device %s not found, ret %ld\n", name,
++		       PTR_ERR(mtd));
++
++	return mtd;
++}
++
+ static uint mtd_len_to_pages(struct mtd_info *mtd, u64 len)
+ {
+ 	do_div(len, mtd->writesize);
+@@ -50,6 +64,11 @@ static bool mtd_is_aligned_with_block_size(struct mtd_info *mtd, u64 size)
+ 	return !do_div(size, mtd->erasesize);
+ }
+ 
++bool gm_mtd_is_aligned_with_block_size(struct mtd_info *mtd, u64 size)
++{
++	return !do_div(size, mtd->erasesize);
++}
++
+ static void mtd_dump_buf(const u8 *buf, uint len, uint offset)
+ {
+ 	int i, j;
+diff --git a/uboot/common/autoboot.c b/uboot/common/autoboot.c
+index c029e7b..561757d 100644
+--- a/uboot/common/autoboot.c
++++ b/uboot/common/autoboot.c
+@@ -25,6 +25,7 @@
+ #include <bootcount.h>
+ #include <crypt.h>
+ #include <dm/ofnode.h>
++#include <mtd.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -53,6 +54,8 @@ static int menukey;
+ #define AUTOBOOT_MENUKEY 0
+ #endif
+ 
++extern bool gm_mtd_is_aligned_with_block_size(struct mtd_info *mtd, u64 size);
++
+ /**
+  * passwd_abort_crypt() - check for a crypt-style hashed key sequence to abort booting
+  *
+@@ -79,7 +82,7 @@ static int passwd_abort_crypt(uint64_t etime)
+ 	int abort = 0;
+ 	int never_timeout = 0;
+ 	int err;
+-
++	
+ 	if (IS_ENABLED(CONFIG_AUTOBOOT_STOP_STR_ENABLE) && !crypt_env_str)
+ 		crypt_env_str = CONFIG_AUTOBOOT_STOP_STR_CRYPT;
+ 
+@@ -213,6 +216,269 @@ static int passwd_abort_sha256(uint64_t etime)
+ 	return abort;
+ }
+ 
++void gm_get_uboot_passwd_from_mfg(char *ret_sha_passwd)
++{
++	int ret,UBOOT_PASSWD_OFFSET=90,UBOOT_PASSWD_LEN=16;
++	bool write_empty_pages,read;
++	u8 *buf;
++	u64 start_off,default_len,off,remaining;
++	struct mtd_info *mtd;
++	struct mtd_oob_ops io_op = {};
++	char passwd_sha256_str[200]={0};
++	int i;
++	
++	mtd_probe_devices();
++	
++	mtd = get_mtd_device_nm("mfg");
++	if (IS_ERR_OR_NULL(mtd))
++		return ;
++	
++	
++	default_len = 0x800;
++	
++	buf = kmalloc(default_len, GFP_KERNEL);//malloc 0x800=2048bytes
++	if (!buf) {
++		printf("Could not map/allocate the user buffer\n");
++		return ;
++	}
++	start_off=0;
++	remaining = default_len;
++	write_empty_pages=0;
++	read=1;
++	
++	io_op.mode = MTD_OPS_AUTO_OOB;//MTD_OPS_AUTO_OOB=1
++	io_op.len = default_len;
++	io_op.ooblen =  0;
++	io_op.datbuf = buf;
++	io_op.oobbuf = NULL;
++	
++	/* Search for the first good block after the given offset */
++	off = start_off;
++	while (mtd_block_isbad(mtd, off))
++		off += mtd->erasesize;
++	
++	/* Loop over the pages to do the actual read/write */
++	while (remaining) {
++		/* Skip the block if it is bad */
++		if (gm_mtd_is_aligned_with_block_size(mtd, off) &&
++		    mtd_block_isbad(mtd, off)) {
++			off += mtd->erasesize;
++			continue;
++		}
++
++		ret = mtd_read_oob(mtd, off, &io_op);
++		
++		if (ret) {
++			printf("Failure while %s at offset 0x%llx\n",
++			       read ? "reading" : "writing", off);
++			break;
++		}
++
++		off += io_op.retlen;
++		remaining -= io_op.retlen;
++		io_op.datbuf += io_op.retlen;
++		io_op.oobbuf += io_op.oobretlen;
++	}
++
++	for (i = 0; i < UBOOT_PASSWD_LEN; i++) {
++		passwd_sha256_str[i]=buf[i+UBOOT_PASSWD_OFFSET];
++	}
++	
++	if(passwd_sha256_str[0]==0xff)
++	{
++		//printf("mfg uboot passwd empty,will use uboot config passwd\n");
++		strcpy(ret_sha_passwd,CONFIG_AUTOBOOT_STOP_STR_SHA256);
++	}else{
++		//printf("mfg uboot passwd not empty,use sha_256_passwd from mfg\n");
++		strcpy(ret_sha_passwd,passwd_sha256_str);
++	}
++	
++	kfree(buf);
++	put_mtd_device(mtd);
++}
++
++void gm_get_username_from_mfg(char *ret_username)
++{
++	int ret,RSN_SN_OFFSET=21,RSN_SN_LEN=8;//RSN last 8digit SN as username
++	bool write_empty_pages,read;
++	u8 *buf;
++	u64 start_off,default_len,off,remaining;
++	struct mtd_info *mtd;
++	struct mtd_oob_ops io_op = {};
++	char username_str[16]={0};
++	int i;
++	
++	mtd_probe_devices();
++	
++	mtd = get_mtd_device_nm("mfg");
++	if (IS_ERR_OR_NULL(mtd))
++		return ;
++	
++	
++	default_len = 0x800;
++	
++	buf = kmalloc(default_len, GFP_KERNEL);//malloc 0x800=2048bytes
++	if (!buf) {
++		printf("Could not map/allocate the user buffer\n");
++		return ;
++	}
++	start_off=0;
++	remaining = default_len;
++	write_empty_pages=0;
++	read=1;
++	
++	io_op.mode = MTD_OPS_AUTO_OOB;//MTD_OPS_AUTO_OOB=1
++	io_op.len = default_len;
++	io_op.ooblen =  0;
++	io_op.datbuf = buf;
++	io_op.oobbuf = NULL;
++	
++	/* Search for the first good block after the given offset */
++	off = start_off;
++	while (mtd_block_isbad(mtd, off))
++		off += mtd->erasesize;
++	
++	/* Loop over the pages to do the actual read/write */
++	while (remaining) {
++		/* Skip the block if it is bad */
++		if (gm_mtd_is_aligned_with_block_size(mtd, off) &&
++		    mtd_block_isbad(mtd, off)) {
++			off += mtd->erasesize;
++			continue;
++		}
++
++		ret = mtd_read_oob(mtd, off, &io_op);
++		
++		if (ret) {
++			printf("Failure while %s at offset 0x%llx\n",
++			       read ? "reading" : "writing", off);
++			break;
++		}
++
++		off += io_op.retlen;
++		remaining -= io_op.retlen;
++		io_op.datbuf += io_op.retlen;
++		io_op.oobbuf += io_op.oobretlen;
++	}
++
++	for (i = 0; i < RSN_SN_LEN; i++) {
++		username_str[i]=buf[i+RSN_SN_OFFSET];
++	}
++	
++	if(username_str[0]==0xff)
++	{
++		//printf("mfg username empty,will use default username\n");
++		strcpy(ret_username,"");
++	}else{
++		//printf("mfg username not empty,use username from mfg\n");
++		strcpy(ret_username,username_str);
++	}
++	
++	kfree(buf);
++	put_mtd_device(mtd);
++}
++
++static int gm_passwd_abort(uint64_t etime)
++{
++	const char *uboot_default_str=NULL;
++	char *presskey;
++	char *c;
++	char mfg_uboot_passwd[32]={0},mfg_username[16]={0};
++	u_int presskey_len = 0;
++	int abort = 0;
++	int never_timeout = 0,failcount=0,username_pass=0;
++	
++	gm_get_username_from_mfg(mfg_username);
++	gm_get_uboot_passwd_from_mfg(mfg_uboot_passwd);
++	
++	if (mfg_username[0] == 0){
++		printf("factory username empty use default username\n");
++		strcpy(mfg_username,"root");
++	}
++	
++	if (mfg_uboot_passwd[0] == 0){
++		printf("factory uboot passwrd empty use default passwd\n");
++		strcpy(mfg_uboot_passwd,"5555");
++	}
++	presskey = malloc_cache_aligned(DELAY_STOP_STR_MAX_LENGTH);
++	c = strstr(uboot_default_str, ":");
++	if (c && (c - uboot_default_str < DELAY_STOP_STR_MAX_LENGTH)) {
++		/* preload presskey with salt */
++		memcpy(presskey, uboot_default_str, c - uboot_default_str);
++		presskey_len = c - uboot_default_str;
++		uboot_default_str = c + 1;
++	}
++	printf("username: ");
++	do {
++		if (tstc()) {
++			/* Check for input string overflow */
++			if (presskey_len >= DELAY_STOP_STR_MAX_LENGTH) {
++				free(presskey);
++				return 0;
++			}
++
++			presskey[presskey_len] = getchar();
++			
++			if ((presskey[presskey_len] == '\r') ||
++			    (presskey[presskey_len] == '\n')) {
++				if (!presskey_len) {
++					never_timeout = 1;
++					continue;
++				}
++				presskey[presskey_len] = '\0';
++				
++				if(!username_pass)
++				{
++					if (strncmp(presskey, mfg_username, 8) == 0)
++					{	
++						username_pass=1;
++						printf("\npassword: ");
++						presskey_len=0;
++						continue;
++					}else{
++						failcount++;
++						printf("\nwrong username (failed count %d)",failcount);
++						printf("\nusername: ");
++						presskey_len=0;
++						if(failcount>2)
++						{
++							printf("\nfailed three times,start autoboot\n");
++							break;
++						}
++						continue;
++					}
++				}				
++				
++				//printf("\nentered password: %s\n",presskey);
++				
++				if (strncmp(presskey, mfg_uboot_passwd, 16) == 0)
++				{	
++					printf("\npassword correct enter uboot console\n");
++					abort=1;
++					break;
++				}else{
++					failcount++;
++					printf("\nwrong password (failed count %d)",failcount);
++					printf("\npassword: ");
++					presskey_len=0;
++					if(failcount>2)
++					{
++						printf("\nfailed three times,start autoboot\n");
++						break;
++					}
++				}
++			} else {
++				printf("%c",presskey[presskey_len]);
++				presskey_len++;
++			}
++		}
++	} while (never_timeout || get_ticks() <= etime);
++	
++	free(presskey);
++	
++	return abort;
++	
++}
+ /**
+  * passwd_abort_key() - check for a key sequence to aborted booting
+  *
+@@ -345,14 +611,18 @@ static int abortboot_key_sequence(int bootdelay)
+ 	 */
+ 	printf(CONFIG_AUTOBOOT_PROMPT, bootdelay);
+ #  endif
+-
++	printf("press 'Enter' to stop autoboot count down\n");
+ 	if (IS_ENABLED(CONFIG_AUTOBOOT_ENCRYPTION)) {
+ 		if (IS_ENABLED(CONFIG_CRYPT_PW) && !fallback_to_sha256())
+ 			abort = passwd_abort_crypt(etime);
+ 		else
+ 			abort = passwd_abort_sha256(etime);
+ 	} else {
+-		abort = passwd_abort_key(etime);
++		if(1){
++			abort = gm_passwd_abort(etime);
++		}else{
++			abort = passwd_abort_key(etime);
++		}
+ 	}
+ 	if (!abort)
+ 		debug_bootkeys("key timeout\n");
+@@ -458,7 +728,12 @@ const char *bootdelay_process(void)
+ 
+ 	if (IS_ENABLED(CONFIG_AUTOBOOT_MENU_SHOW)) {
+ 		if (IS_ENABLED(CONFIG_AUTOBOOT_MENU_MTK_SHOW))
+-			run_command("mtkautoboot", 0);
++		{
++			if(IS_ENABLED(CONFIG_AUTOBOOT_KEYED))
++				env_set("bootcmd","mtkboardboot");
++			else
++				run_command("mtkautoboot", 0);
++		}	
+ 		else
+ 			bootdelay = menu_show(bootdelay);
+ 	}
+diff --git a/uboot/configs/mt7986_JIO_spim_nand_sb_rfb_defconfig b/uboot/configs/mt7986_JIO_spim_nand_sb_rfb_defconfig
+new file mode 100755
+index 0000000..88bac53
+--- /dev/null
++++ b/uboot/configs/mt7986_JIO_spim_nand_sb_rfb_defconfig
+@@ -0,0 +1,103 @@
++CONFIG_ARM=y
++CONFIG_POSITION_INDEPENDENT=y
++CONFIG_ARCH_MEDIATEK=y
++CONFIG_SYS_TEXT_BASE=0x41e00000
++CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_ENV_SIZE=0x80000
++CONFIG_DEFAULT_DEVICE_TREE="mt7986a-rfb"
++CONFIG_TARGET_MT7986=y
++CONFIG_ENABLE_NAND_NMBM=y
++CONFIG_DEBUG_UART_BASE=0x11002000
++CONFIG_DEBUG_UART_CLOCK=40000000
++CONFIG_SYS_LOAD_ADDR=0x46000000
++CONFIG_MEDIATEK_BOOTMENU=y
++CONFIG_MTK_UBI_SUPPORT=y
++CONFIG_MTK_SECURE_BOOT=y
++CONFIG_MTK_DUAL_BOOT=y
++CONFIG_MTK_DUAL_BOOT_IMAGE_ROOTFS_VERIFY=y
++CONFIG_MTK_DUAL_BOOT_SLOT_1_KERNEL_NAME="kernel2"
++CONFIG_MTK_DUAL_BOOT_SLOT_1_ROOTFS_NAME="rootfs2"
++CONFIG_MTK_DUAL_BOOT_SHARED_ROOTFS_DATA=y
++CONFIG_MTK_DUAL_BOOT_ROOTFS_DATA_NAME="rootfs_data"
++CONFIG_MTK_DUAL_BOOT_ROOTFS_DATA_SIZE=8
++CONFIG_MTK_DUAL_BOOT_RESERVE_ROOTFS_DATA=y
++CONFIG_MTK_UPGRADE_IMAGE_ROOTFS_VERIFY=y
++CONFIG_DEBUG_UART=y
++CONFIG_LEGACY_IMAGE_FORMAT=y
++CONFIG_SHOW_BOOT_PROGRESS=y
++CONFIG_BOOTDELAY=2
++CONFIG_AUTOBOOT_KEYED=y
++CONFIG_AUTOBOOT_PROMPT="Autoboot in %d seconds\n"
++CONFIG_AUTOBOOT_DELAY_STR="n"
++CONFIG_AUTOBOOT_STOP_STR="n"
++CONFIG_AUTOBOOT_MENU_SHOW=y
++CONFIG_AUTOBOOT_MENU_MTK_SHOW=y
++CONFIG_DEFAULT_FDT_FILE="mt7986a-rfb"
++CONFIG_LOGLEVEL=7
++CONFIG_LOG=y
++CONFIG_SYS_PROMPT="MT7986> "
++# CONFIG_BOOTM_NETBSD is not set
++# CONFIG_BOOTM_PLAN9 is not set
++# CONFIG_BOOTM_RTEMS is not set
++# CONFIG_BOOTM_VXWORKS is not set
++# CONFIG_CMD_ELF is not set
++CONFIG_CMD_DM=y
++# CONFIG_CMD_FLASH is not set
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_PWM=y
++CONFIG_CMD_MMC=y
++CONFIG_CMD_MTD=y
++CONFIG_CMD_NMBM=y
++CONFIG_CMD_PCI=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_PSTORE=y
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
++CONFIG_CMD_PSTORE_MEM_SIZE=0x10000
++CONFIG_CMD_PSTORE_RECORD_SIZE=0x1000
++CONFIG_CMD_PSTORE_CONSOLE_SIZE=0x1000
++CONFIG_CMD_PSTORE_FTRACE_SIZE=0x1000
++CONFIG_CMD_PSTORE_PMSG_SIZE=0x1000
++CONFIG_CMD_PSTORE_ECC_SIZE=0
++CONFIG_CMD_SMC=y
++CONFIG_MTDIDS_DEFAULT="nmbm0=nmbm0"
++CONFIG_MTDPARTS_DEFAULT="nmbm0:1024k(bl2),512k(u-boot-env),2048k(factory),2048k(fip),143360k(ubi),92160k(ubi2),2048k(mfg),2048k(Jio-Reserved)"
++CONFIG_DOS_PARTITION=y
++CONFIG_EFI_PARTITION=y
++CONFIG_PARTITION_TYPE_GUID=y
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_IS_IN_UBI=y
++CONFIG_ENV_UBI_PART="ubi"
++CONFIG_ENV_UBI_VOLUME="u-boot-env"
++CONFIG_ENV_UBI_VOLUME_CREATE=y
++CONFIG_ENV_UBI_VID_OFFSET=0
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_REGMAP=y
++CONFIG_SYSCON=y
++CONFIG_CLK=y
++CONFIG_MMC_HS200_SUPPORT=y
++CONFIG_MMC_MTK=y
++CONFIG_DM_MTD=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_PHY_FIXED=y
++CONFIG_DM_ETH=y
++CONFIG_MEDIATEK_ETH=y
++CONFIG_PCI=y
++CONFIG_PCIE_MEDIATEK=y
++CONFIG_PINCTRL=y
++CONFIG_PINCONF=y
++CONFIG_PINCTRL_MT7986=y
++CONFIG_POWER_DOMAIN=y
++CONFIG_MTK_POWER_DOMAIN=y
++CONFIG_DM_REGULATOR=y
++CONFIG_DM_REGULATOR_FIXED=y
++CONFIG_DM_PWM=y
++CONFIG_PWM_MTK=y
++CONFIG_DM_SERIAL=y
++CONFIG_MTK_SERIAL=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_MTK_SPIM=y
++CONFIG_HEXDUMP=y
++# CONFIG_EFI_LOADER is not set
+-- 
+2.7.4
+

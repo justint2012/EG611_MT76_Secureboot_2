@@ -1,0 +1,553 @@
+From eb447dd18b065ed44229df08396dfb1595801598 Mon Sep 17 00:00:00 2001
+From: Justin Tsai <justin@gmail.com>
+Date: Wed, 10 May 2023 18:45:48 +0800
+Subject: [PATCH 12/12] remove stage_dir to fix build fail issue.
+
+---
+ openwrt/staging_dir/host/.prereq-build                  |   0
+ openwrt/staging_dir/host/bin/awk                        |   1 -
+ openwrt/staging_dir/host/bin/bash                       |   1 -
+ openwrt/staging_dir/host/bin/bzip2                      |   1 -
+ openwrt/staging_dir/host/bin/cp                         |   1 -
+ openwrt/staging_dir/host/bin/diff                       |   1 -
+ openwrt/staging_dir/host/bin/egrep                      |   1 -
+ openwrt/staging_dir/host/bin/file                       |   1 -
+ openwrt/staging_dir/host/bin/find                       |   1 -
+ openwrt/staging_dir/host/bin/g++                        |   1 -
+ openwrt/staging_dir/host/bin/gcc                        |   1 -
+ openwrt/staging_dir/host/bin/getopt                     |   1 -
+ openwrt/staging_dir/host/bin/git                        |   1 -
+ openwrt/staging_dir/host/bin/grep                       |   1 -
+ openwrt/staging_dir/host/bin/ldconfig                   |   1 -
+ openwrt/staging_dir/host/bin/mkhash                     | Bin 26192 -> 0 bytes
+ openwrt/staging_dir/host/bin/patch                      |   1 -
+ openwrt/staging_dir/host/bin/perl                       |   1 -
+ openwrt/staging_dir/host/bin/python                     |   1 -
+ openwrt/staging_dir/host/bin/python3                    |   1 -
+ openwrt/staging_dir/host/bin/rsync                      |   1 -
+ openwrt/staging_dir/host/bin/seq                        |   1 -
+ openwrt/staging_dir/host/bin/stat                       |   1 -
+ openwrt/staging_dir/host/bin/tar                        |   1 -
+ openwrt/staging_dir/host/bin/unzip                      |   1 -
+ openwrt/staging_dir/host/bin/wget                       |   1 -
+ openwrt/staging_dir/host/bin/which                      |   1 -
+ openwrt/staging_dir/host/bin/xargs                      |   1 -
+ openwrt/staging_dir/host/bin/xxd                        |   1 -
+ .../toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/info.mk |   6 ------
+ .../lib/.gitkeep                                        |   0
+ .../toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/lib32   |   1 -
+ .../toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/lib64   |   1 -
+ .../stamp/.gitkeep                                      |   0
+ .../usr/include/.gitkeep                                |   0
+ .../usr/lib/.gitkeep                                    |   0
+ 36 files changed, 35 deletions(-)
+ delete mode 100644 openwrt/staging_dir/host/.prereq-build
+ delete mode 120000 openwrt/staging_dir/host/bin/awk
+ delete mode 120000 openwrt/staging_dir/host/bin/bash
+ delete mode 120000 openwrt/staging_dir/host/bin/bzip2
+ delete mode 120000 openwrt/staging_dir/host/bin/cp
+ delete mode 120000 openwrt/staging_dir/host/bin/diff
+ delete mode 120000 openwrt/staging_dir/host/bin/egrep
+ delete mode 120000 openwrt/staging_dir/host/bin/file
+ delete mode 120000 openwrt/staging_dir/host/bin/find
+ delete mode 120000 openwrt/staging_dir/host/bin/g++
+ delete mode 120000 openwrt/staging_dir/host/bin/gcc
+ delete mode 120000 openwrt/staging_dir/host/bin/getopt
+ delete mode 120000 openwrt/staging_dir/host/bin/git
+ delete mode 120000 openwrt/staging_dir/host/bin/grep
+ delete mode 120000 openwrt/staging_dir/host/bin/ldconfig
+ delete mode 100755 openwrt/staging_dir/host/bin/mkhash
+ delete mode 120000 openwrt/staging_dir/host/bin/patch
+ delete mode 120000 openwrt/staging_dir/host/bin/perl
+ delete mode 120000 openwrt/staging_dir/host/bin/python
+ delete mode 120000 openwrt/staging_dir/host/bin/python3
+ delete mode 120000 openwrt/staging_dir/host/bin/rsync
+ delete mode 120000 openwrt/staging_dir/host/bin/seq
+ delete mode 120000 openwrt/staging_dir/host/bin/stat
+ delete mode 120000 openwrt/staging_dir/host/bin/tar
+ delete mode 120000 openwrt/staging_dir/host/bin/unzip
+ delete mode 120000 openwrt/staging_dir/host/bin/wget
+ delete mode 120000 openwrt/staging_dir/host/bin/which
+ delete mode 120000 openwrt/staging_dir/host/bin/xargs
+ delete mode 120000 openwrt/staging_dir/host/bin/xxd
+ delete mode 100644 openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/info.mk
+ delete mode 100644 openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/lib/.gitkeep
+ delete mode 120000 openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/lib32
+ delete mode 120000 openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/lib64
+ delete mode 100644 openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/stamp/.gitkeep
+ delete mode 100644 openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/usr/include/.gitkeep
+ delete mode 100644 openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/usr/lib/.gitkeep
+
+diff --git a/openwrt/staging_dir/host/.prereq-build b/openwrt/staging_dir/host/.prereq-build
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/openwrt/staging_dir/host/bin/awk b/openwrt/staging_dir/host/bin/awk
+deleted file mode 120000
+index 19ba657..0000000
+--- a/openwrt/staging_dir/host/bin/awk
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/gawk
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/bash b/openwrt/staging_dir/host/bin/bash
+deleted file mode 120000
+index 8fb99ed..0000000
+--- a/openwrt/staging_dir/host/bin/bash
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/bash
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/bzip2 b/openwrt/staging_dir/host/bin/bzip2
+deleted file mode 120000
+index c5e0b30..0000000
+--- a/openwrt/staging_dir/host/bin/bzip2
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/bzip2
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/cp b/openwrt/staging_dir/host/bin/cp
+deleted file mode 120000
+index d134ab5..0000000
+--- a/openwrt/staging_dir/host/bin/cp
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/cp
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/diff b/openwrt/staging_dir/host/bin/diff
+deleted file mode 120000
+index a94884f..0000000
+--- a/openwrt/staging_dir/host/bin/diff
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/diff
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/egrep b/openwrt/staging_dir/host/bin/egrep
+deleted file mode 120000
+index 55bf163..0000000
+--- a/openwrt/staging_dir/host/bin/egrep
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/egrep
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/file b/openwrt/staging_dir/host/bin/file
+deleted file mode 120000
+index 719090a..0000000
+--- a/openwrt/staging_dir/host/bin/file
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/file
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/find b/openwrt/staging_dir/host/bin/find
+deleted file mode 120000
+index cff52fe..0000000
+--- a/openwrt/staging_dir/host/bin/find
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/find
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/g++ b/openwrt/staging_dir/host/bin/g++
+deleted file mode 120000
+index e51afad..0000000
+--- a/openwrt/staging_dir/host/bin/g++
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/g++
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/gcc b/openwrt/staging_dir/host/bin/gcc
+deleted file mode 120000
+index f2cd5f1..0000000
+--- a/openwrt/staging_dir/host/bin/gcc
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/cc
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/getopt b/openwrt/staging_dir/host/bin/getopt
+deleted file mode 120000
+index f557aa5..0000000
+--- a/openwrt/staging_dir/host/bin/getopt
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/getopt
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/git b/openwrt/staging_dir/host/bin/git
+deleted file mode 120000
+index 8987a51..0000000
+--- a/openwrt/staging_dir/host/bin/git
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/git
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/grep b/openwrt/staging_dir/host/bin/grep
+deleted file mode 120000
+index 0ee10b6..0000000
+--- a/openwrt/staging_dir/host/bin/grep
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/grep
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/ldconfig b/openwrt/staging_dir/host/bin/ldconfig
+deleted file mode 120000
+index 63b10de..0000000
+--- a/openwrt/staging_dir/host/bin/ldconfig
++++ /dev/null
+@@ -1 +0,0 @@
+-/bin/true
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/mkhash b/openwrt/staging_dir/host/bin/mkhash
+deleted file mode 100755
+index 77f93affb8e14153b67c82904bbd21d935ff3f58..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 26192
+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
+VrQsSuq88OG(<rWws1T9m{uhSJb|wG-
+
+diff --git a/openwrt/staging_dir/host/bin/patch b/openwrt/staging_dir/host/bin/patch
+deleted file mode 120000
+index 2dcb349..0000000
+--- a/openwrt/staging_dir/host/bin/patch
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/patch
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/perl b/openwrt/staging_dir/host/bin/perl
+deleted file mode 120000
+index 26cae47..0000000
+--- a/openwrt/staging_dir/host/bin/perl
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/perl
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/python b/openwrt/staging_dir/host/bin/python
+deleted file mode 120000
+index 02a1389..0000000
+--- a/openwrt/staging_dir/host/bin/python
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/python3.8
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/python3 b/openwrt/staging_dir/host/bin/python3
+deleted file mode 120000
+index 02a1389..0000000
+--- a/openwrt/staging_dir/host/bin/python3
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/python3.8
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/rsync b/openwrt/staging_dir/host/bin/rsync
+deleted file mode 120000
+index 09175d7..0000000
+--- a/openwrt/staging_dir/host/bin/rsync
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/rsync
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/seq b/openwrt/staging_dir/host/bin/seq
+deleted file mode 120000
+index dc67bea..0000000
+--- a/openwrt/staging_dir/host/bin/seq
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/seq
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/stat b/openwrt/staging_dir/host/bin/stat
+deleted file mode 120000
+index 919bb7a..0000000
+--- a/openwrt/staging_dir/host/bin/stat
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/stat
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/tar b/openwrt/staging_dir/host/bin/tar
+deleted file mode 120000
+index 7fd601a..0000000
+--- a/openwrt/staging_dir/host/bin/tar
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/tar
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/unzip b/openwrt/staging_dir/host/bin/unzip
+deleted file mode 120000
+index a24227d..0000000
+--- a/openwrt/staging_dir/host/bin/unzip
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/unzip
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/wget b/openwrt/staging_dir/host/bin/wget
+deleted file mode 120000
+index 0915eda..0000000
+--- a/openwrt/staging_dir/host/bin/wget
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/wget
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/which b/openwrt/staging_dir/host/bin/which
+deleted file mode 120000
+index 8232447..0000000
+--- a/openwrt/staging_dir/host/bin/which
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/which
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/xargs b/openwrt/staging_dir/host/bin/xargs
+deleted file mode 120000
+index ad526c4..0000000
+--- a/openwrt/staging_dir/host/bin/xargs
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/bin/xargs
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/host/bin/xxd b/openwrt/staging_dir/host/bin/xxd
+deleted file mode 120000
+index a4a29c5..0000000
+--- a/openwrt/staging_dir/host/bin/xxd
++++ /dev/null
+@@ -1 +0,0 @@
+-/home/dolphin/Desktop/MT7986_MT76_secureboot/EG611_3/EG611_MT76_Secureboot_2/openwrt/scripts/xxdi.pl
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/info.mk b/openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/info.mk
+deleted file mode 100644
+index 4f311c5..0000000
+--- a/openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/info.mk
++++ /dev/null
+@@ -1,6 +0,0 @@
+-TARGET_CROSS=
+-GCC_VERSION=unknown
+-LIBC_TYPE=unknown
+-LIBC_URL=unknown
+-LIBC_VERSION=unknown
+-LIBC_SO_VERSION=unknown
+diff --git a/openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/lib/.gitkeep b/openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/lib/.gitkeep
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/lib32 b/openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/lib32
+deleted file mode 120000
+index 7951405..0000000
+--- a/openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/lib32
++++ /dev/null
+@@ -1 +0,0 @@
+-lib
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/lib64 b/openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/lib64
+deleted file mode 120000
+index 7951405..0000000
+--- a/openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/lib64
++++ /dev/null
+@@ -1 +0,0 @@
+-lib
+\ No newline at end of file
+diff --git a/openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/stamp/.gitkeep b/openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/stamp/.gitkeep
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/usr/include/.gitkeep b/openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/usr/include/.gitkeep
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/usr/lib/.gitkeep b/openwrt/staging_dir/toolchain-aarch64_cortex-a53_gcc-8.4.0_musl/usr/lib/.gitkeep
+deleted file mode 100644
+index e69de29..0000000
+-- 
+2.7.4
+

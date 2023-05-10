@@ -1,0 +1,36 @@
+From 20d84c4eeb6d3ab637fdef737b5d1605904bbf04 Mon Sep 17 00:00:00 2001
+From: Justin Tsai <justin@gmail.com>
+Date: Wed, 10 May 2023 12:48:37 +0800
+Subject: [PATCH 07/12] [MTK patch] add
+ [RJIO][MT7986][AX6000][MT76]patch_001-002 patch [001]
+
+add missing patch for Kernel - Reserved Memory for Ramoops.
+---
+ .../files-5.4/arch/arm64/boot/dts/mediatek/mt7986a.dtsi       | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/openwrt/target/linux/mediatek/files-5.4/arch/arm64/boot/dts/mediatek/mt7986a.dtsi b/openwrt/target/linux/mediatek/files-5.4/arch/arm64/boot/dts/mediatek/mt7986a.dtsi
+index 92b585b..d00a6f1 100644
+--- a/openwrt/target/linux/mediatek/files-5.4/arch/arm64/boot/dts/mediatek/mt7986a.dtsi
++++ b/openwrt/target/linux/mediatek/files-5.4/arch/arm64/boot/dts/mediatek/mt7986a.dtsi
+@@ -123,7 +123,16 @@
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+ 		ranges;
+-
++		
++		ramoops:ramoops@42ff0000{
++			compatible="ramoops";
++			reg=<0x0 0x42ff0000 0x0 0x10000>;
++			record-size=<0x1000>;
++			console-size=<0x1000>;
++			ftrace-size=<0x1000>;
++			pmsg-size=<0x1000>;
++		};
++		
+ 		/* 192 KiB reserved for ARM Trusted Firmware (BL31) */
+ 		secmon_reserved: secmon@43000000 {
+ 			reg = <0 0x43000000 0 0x30000>;
+-- 
+2.7.4
+

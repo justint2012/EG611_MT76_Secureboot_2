@@ -1,17 +1,16 @@
-From 6ad9bd65769003ab526e504577e0f747eba14287 Mon Sep 17 00:00:00 2001
-From: Bo Jiao <Bo.Jiao@mediatek.com>
-Date: Wed, 22 Jun 2022 09:42:19 +0800
-Subject: [PATCH 1/8] 
- 9990-mt7622-backport-nf-hw-offload-framework-and-upstream-hnat-plus-xt-FLOWOFFLOAD-update-v2
+From 017760a9a027ef51fec8ef4d6c7095cea31af0c4 Mon Sep 17 00:00:00 2001
+From: mtk27745 <rex.lu@mediatek.com>
+Date: Mon, 17 Apr 2023 10:59:33 +0800
+Subject: [PATCH] 9990-mt7622-backport-nf-hw-offload-framework-and-ups
 
 ---
  drivers/net/ethernet/mediatek/Makefile        |    3 +-
- drivers/net/ethernet/mediatek/mtk_eth_soc.c   |   28 +-
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c   |   25 +-
  drivers/net/ethernet/mediatek/mtk_eth_soc.h   |   20 +-
  drivers/net/ethernet/mediatek/mtk_ppe.c       |  509 +++++++
  drivers/net/ethernet/mediatek/mtk_ppe.h       |  288 ++++
  .../net/ethernet/mediatek/mtk_ppe_debugfs.c   |  214 +++
- .../net/ethernet/mediatek/mtk_ppe_offload.c   |  526 ++++++++
+ .../net/ethernet/mediatek/mtk_ppe_offload.c   |  541 ++++++++
  drivers/net/ethernet/mediatek/mtk_ppe_regs.h  |  144 ++
  drivers/net/ppp/ppp_generic.c                 |   22 +
  drivers/net/ppp/pppoe.c                       |   24 +
@@ -23,7 +22,7 @@ Subject: [PATCH 1/8]
  .../net/netfilter/ipv6/nf_conntrack_ipv6.h    |    3 -
  include/net/netfilter/nf_conntrack.h          |   12 +
  include/net/netfilter/nf_conntrack_acct.h     |   11 +
- include/net/netfilter/nf_flow_table.h         |  264 +++-
+ include/net/netfilter/nf_flow_table.h         |  266 +++-
  include/net/netns/conntrack.h                 |    6 +
  .../linux/netfilter/nf_conntrack_common.h     |    9 +-
  include/uapi/linux/netfilter/xt_FLOWOFFLOAD.h |   17 +
@@ -33,7 +32,7 @@ Subject: [PATCH 1/8]
  net/bridge/br_vlan.c                          |   55 +
  net/core/dev.c                                |   46 +
  net/dsa/dsa.c                                 |    9 +
- net/dsa/slave.c                               |   41 +-
+ net/dsa/slave.c                               |   37 +-
  net/ipv4/netfilter/Kconfig                    |    4 +-
  net/ipv6/ip6_output.c                         |    2 +-
  net/ipv6/netfilter/Kconfig                    |    3 +-
@@ -44,11 +43,11 @@ Subject: [PATCH 1/8]
  net/netfilter/nf_conntrack_proto_tcp.c        |    4 +
  net/netfilter/nf_conntrack_proto_udp.c        |    4 +
  net/netfilter/nf_conntrack_standalone.c       |   34 +-
- net/netfilter/nf_flow_table_core.c            |  446 +++---
- net/netfilter/nf_flow_table_ip.c              |  455 ++++---
- net/netfilter/nf_flow_table_offload.c         | 1191 +++++++++++++++++
- net/netfilter/xt_FLOWOFFLOAD.c                |  719 ++++++++++
- 43 files changed, 4913 insertions(+), 432 deletions(-)
+ net/netfilter/nf_flow_table_core.c            |  462 ++++---
+ net/netfilter/nf_flow_table_ip.c              |  447 +++---
+ net/netfilter/nf_flow_table_offload.c         | 1197 +++++++++++++++++
+ net/netfilter/xt_FLOWOFFLOAD.c                |  785 +++++++++++
+ 43 files changed, 5000 insertions(+), 435 deletions(-)
  create mode 100644 drivers/net/ethernet/mediatek/mtk_ppe.c
  create mode 100644 drivers/net/ethernet/mediatek/mtk_ppe.h
  create mode 100644 drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
@@ -59,10 +58,10 @@ Subject: [PATCH 1/8]
  create mode 100644 net/netfilter/xt_FLOWOFFLOAD.c
 
 diff --git a/drivers/net/ethernet/mediatek/Makefile b/drivers/net/ethernet/mediatek/Makefile
-index 13c5b4e8f..0a6af99f1 100755
+index 13d852c..cfffde4 100755
 --- a/drivers/net/ethernet/mediatek/Makefile
 +++ b/drivers/net/ethernet/mediatek/Makefile
-@@ -4,5 +4,6 @@
+@@ -4,6 +4,7 @@
  #
  
  obj-$(CONFIG_NET_MEDIATEK_SOC)			+= mtk_eth.o
@@ -70,11 +69,12 @@ index 13c5b4e8f..0a6af99f1 100755
 +mtk_eth-y := mtk_eth_soc.o mtk_sgmii.o mtk_usxgmii.o mtk_eth_path.o mtk_eth_dbg.o mtk_eth_reset.o	\
 +	     mtk_ppe.o mtk_ppe_debugfs.o mtk_ppe_offload.o
  obj-$(CONFIG_NET_MEDIATEK_HNAT)			+= mtk_hnat/
+ obj-$(CONFIG_XFRM_OFFLOAD)			+= mtk_ipsec.o
 diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 2b21f7ed0..819d8a0be 100755
+index 19c4846..50e2d14 100755
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -3081,6 +3081,7 @@ static int mtk_open(struct net_device *d
+@@ -3082,6 +3082,7 @@ static int mtk_open(struct net_device *dev)
  	struct mtk_phylink_priv *phylink_priv = &mac->phylink_priv;
  	int err, i;
  	struct device_node *phy_node;
@@ -82,7 +82,7 @@ index 2b21f7ed0..819d8a0be 100755
  
  	err = phylink_of_phy_connect(mac->phylink, mac->of_node, 0);
  	if (err) {
-@@ -3157,7 +3158,10 @@ static int mtk_open(struct net_device *d
+@@ -3158,7 +3159,10 @@ static int mtk_open(struct net_device *dev)
  	if (!phy_node && eth->xgmii->regmap_sgmii[mac->id])
  		regmap_write(eth->xgmii->regmap_sgmii[mac->id], SGMSYS_QPHY_PWR_STATE_CTRL, 0);
  
@@ -94,7 +94,7 @@ index 2b21f7ed0..819d8a0be 100755
  
  	return 0;
  }
-@@ -3238,6 +3242,9 @@ static int mtk_stop(struct net_device *d
+@@ -3239,6 +3243,9 @@ static int mtk_stop(struct net_device *dev)
  
  	mtk_dma_free(eth);
  
@@ -104,7 +104,7 @@ index 2b21f7ed0..819d8a0be 100755
  	return 0;
  }
  
-@@ -3915,6 +3922,7 @@ static const struct net_device_ops mtk_n
+@@ -3918,6 +3925,7 @@ static const struct net_device_ops mtk_netdev_ops = {
  #ifdef CONFIG_NET_POLL_CONTROLLER
  	.ndo_poll_controller	= mtk_poll_controller,
  #endif
@@ -112,7 +112,7 @@ index 2b21f7ed0..819d8a0be 100755
  };
  
  static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
-@@ -4308,6 +4316,17 @@ static int mtk_probe(struct platform_dev
+@@ -4312,6 +4320,17 @@ static int mtk_probe(struct platform_device *pdev)
  			goto err_free_dev;
  	}
  
@@ -130,7 +130,7 @@ index 2b21f7ed0..819d8a0be 100755
  	for (i = 0; i < MTK_MAX_DEVS; i++) {
  		if (!eth->netdev[i])
  			continue;
-@@ -4410,6 +4429,7 @@ static const struct mtk_soc_data mt2701_
+@@ -4414,6 +4433,7 @@ static const struct mtk_soc_data mt2701_data = {
  	.required_clks = MT7623_CLKS_BITMAP,
  	.required_pctl = true,
  	.has_sram = false,
@@ -138,7 +138,7 @@ index 2b21f7ed0..819d8a0be 100755
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
  		.rxd_size = sizeof(struct mtk_rx_dma),
-@@ -4424,6 +4444,7 @@ static const struct mtk_soc_data mt7621_
+@@ -4428,6 +4448,7 @@ static const struct mtk_soc_data mt7621_data = {
  	.required_clks = MT7621_CLKS_BITMAP,
  	.required_pctl = false,
  	.has_sram = false,
@@ -146,7 +146,7 @@ index 2b21f7ed0..819d8a0be 100755
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
  		.rxd_size = sizeof(struct mtk_rx_dma),
-@@ -4439,6 +4460,7 @@ static const struct mtk_soc_data mt7622_
+@@ -4443,6 +4464,7 @@ static const struct mtk_soc_data mt7622_data = {
  	.required_clks = MT7622_CLKS_BITMAP,
  	.required_pctl = false,
  	.has_sram = false,
@@ -154,7 +154,7 @@ index 2b21f7ed0..819d8a0be 100755
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
  		.rxd_size = sizeof(struct mtk_rx_dma),
-@@ -4453,6 +4475,7 @@ static const struct mtk_soc_data mt7623_
+@@ -4457,6 +4479,7 @@ static const struct mtk_soc_data mt7623_data = {
  	.required_clks = MT7623_CLKS_BITMAP,
  	.required_pctl = true,
  	.has_sram = false,
@@ -163,7 +163,7 @@ index 2b21f7ed0..819d8a0be 100755
  		.txd_size = sizeof(struct mtk_tx_dma),
  		.rxd_size = sizeof(struct mtk_rx_dma),
 diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-index b6380ffeb..349f98503 100755
+index b617c13..f607307 100755
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -15,6 +15,8 @@
@@ -175,7 +175,7 @@ index b6380ffeb..349f98503 100755
  
  #define MTK_QDMA_PAGE_SIZE	2048
  #define	MTK_MAX_RX_LENGTH	1536
-@@ -37,7 +39,8 @@
+@@ -43,7 +45,8 @@
  				 NETIF_F_HW_VLAN_CTAG_TX | \
  				 NETIF_F_SG | NETIF_F_TSO | \
  				 NETIF_F_TSO6 | \
@@ -185,15 +185,15 @@ index b6380ffeb..349f98503 100755
  #define MTK_SET_FEATURES	(NETIF_F_LRO | \
  				 NETIF_F_HW_VLAN_CTAG_RX)
  #define MTK_HW_FEATURES_MT7628	(NETIF_F_SG | NETIF_F_RXCSUM)
-@@ -107,6 +110,7 @@
- #define MTK_GDMA_TCS_EN		BIT(21)
+@@ -115,6 +118,7 @@
  #define MTK_GDMA_UCS_EN		BIT(20)
+ #define MTK_GDMA_STRP_CRC	BIT(16)
  #define MTK_GDMA_TO_PDMA	0x0
 +#define MTK_GDMA_TO_PPE		0x4444
  #define MTK_GDMA_DROP_ALL	0x7777
  
- /* Unicast Filter MAC Address Register - Low */
-@@ -547,6 +551,12 @@
+ /* GDM Egress Control Register */
+@@ -580,6 +584,12 @@
  #define RX_DMA_TCI(_x)		((_x) & (VLAN_PRIO_MASK | VLAN_VID_MASK))
  #define RX_DMA_VPID(_x)		(((_x) >> 16) & 0xffff)
  
@@ -206,15 +206,15 @@ index b6380ffeb..349f98503 100755
  /* QDMA descriptor rxd4 */
  #define RX_DMA_L4_VALID		BIT(24)
  #define RX_DMA_L4_VALID_PDMA	BIT(30)		/* when PDMA is used */
-@@ -1158,6 +1168,7 @@ struct mtk_soc_data {
- 	u32		caps;
+@@ -1438,6 +1448,7 @@ struct mtk_soc_data {
+ 	u64		caps;
  	u32		required_clks;
  	bool		required_pctl;
 +	u8		offload_version;
  	netdev_features_t hw_features;
  	bool		has_sram;
- };
-@@ -1271,6 +1282,9 @@ struct mtk_eth {
+ 	struct {
+@@ -1584,6 +1595,9 @@ struct mtk_eth {
  	int				ip_align;
  	spinlock_t			syscfg0_lock;
  	struct timer_list		mtk_dma_monitor_timer;
@@ -224,8 +224,8 @@ index b6380ffeb..349f98503 100755
  };
  
  /* struct mtk_mac -	the structure that holds the info about the MACs of the
-@@ -1319,4 +1333,8 @@ int mtk_gmac_rgmii_path_setup(struct mtk_eth *eth, int mac_id);
- void mtk_gdm_config(struct mtk_eth *eth, u32 config);
+@@ -1638,6 +1652,10 @@ int mtk_gmac_usxgmii_path_setup(struct mtk_eth *eth, int mac_id);
+ void mtk_gdm_config(struct mtk_eth *eth, u32 id, u32 config);
  void ethsys_reset(struct mtk_eth *eth, u32 reset_bits);
  
 +int mtk_eth_offload_init(struct mtk_eth *eth);
@@ -233,9 +233,11 @@ index b6380ffeb..349f98503 100755
 +		     void *type_data);
 +
  int mtk_mac2xgmii_id(struct mtk_eth *eth, int mac_id);
+ int mtk_usxgmii_init(struct mtk_xgmii *ss, struct device_node *r);
+ int mtk_xfi_pextp_init(struct mtk_xgmii *ss, struct device_node *r);
 diff --git a/drivers/net/ethernet/mediatek/mtk_ppe.c b/drivers/net/ethernet/mediatek/mtk_ppe.c
 new file mode 100644
-index 000000000..66298e223
+index 0000000..d5f70f7
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
 @@ -0,0 +1,509 @@
@@ -692,12 +694,12 @@ index 000000000..66298e223
 +	      FIELD_PREP(MTK_PPE_UNBIND_AGE_DELTA, 3);
 +	ppe_w32(ppe, MTK_PPE_UNBIND_AGE, val);
 +
-+	val = FIELD_PREP(MTK_PPE_BIND_AGE0_DELTA_UDP, 12) |
++	val = FIELD_PREP(MTK_PPE_BIND_AGE0_DELTA_UDP, 30) |
 +	      FIELD_PREP(MTK_PPE_BIND_AGE0_DELTA_NON_L4, 1);
 +	ppe_w32(ppe, MTK_PPE_BIND_AGE0, val);
 +
 +	val = FIELD_PREP(MTK_PPE_BIND_AGE1_DELTA_TCP_FIN, 1) |
-+	      FIELD_PREP(MTK_PPE_BIND_AGE1_DELTA_TCP, 7);
++	      FIELD_PREP(MTK_PPE_BIND_AGE1_DELTA_TCP, 30);
 +	ppe_w32(ppe, MTK_PPE_BIND_AGE1, val);
 +
 +	val = MTK_PPE_BIND_LIMIT0_QUARTER | MTK_PPE_BIND_LIMIT0_HALF;
@@ -750,7 +752,7 @@ index 000000000..66298e223
 +}
 diff --git a/drivers/net/ethernet/mediatek/mtk_ppe.h b/drivers/net/ethernet/mediatek/mtk_ppe.h
 new file mode 100644
-index 000000000..242fb8f2a
+index 0000000..242fb8f
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.h
 @@ -0,0 +1,288 @@
@@ -1044,7 +1046,7 @@ index 000000000..242fb8f2a
 +#endif
 diff --git a/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c b/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
 new file mode 100644
-index 000000000..d4b482340
+index 0000000..d4b4823
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
 @@ -0,0 +1,214 @@
@@ -1264,7 +1266,7 @@ index 000000000..d4b482340
 +}
 diff --git a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
 new file mode 100644
-index 000000000..4294f0c74
+index 0000000..83fc1e0
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
 @@ -0,0 +1,541 @@
@@ -1811,7 +1813,7 @@ index 000000000..4294f0c74
 +}
 diff --git a/drivers/net/ethernet/mediatek/mtk_ppe_regs.h b/drivers/net/ethernet/mediatek/mtk_ppe_regs.h
 new file mode 100644
-index 000000000..0c45ea090
+index 0000000..0c45ea0
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_regs.h
 @@ -0,0 +1,144 @@
@@ -1960,7 +1962,7 @@ index 000000000..0c45ea090
 +
 +#endif
 diff --git a/drivers/net/ppp/ppp_generic.c b/drivers/net/ppp/ppp_generic.c
-index a085213dc..813e30495 100644
+index a085213..813e304 100644
 --- a/drivers/net/ppp/ppp_generic.c
 +++ b/drivers/net/ppp/ppp_generic.c
 @@ -1378,12 +1378,34 @@ static void ppp_dev_priv_destructor(struct net_device *dev)
@@ -1999,7 +2001,7 @@ index a085213dc..813e30495 100644
  
  static struct device_type ppp_type = {
 diff --git a/drivers/net/ppp/pppoe.c b/drivers/net/ppp/pppoe.c
-index 087b01684..7a8c246ab 100644
+index 087b016..7a8c246 100644
 --- a/drivers/net/ppp/pppoe.c
 +++ b/drivers/net/ppp/pppoe.c
 @@ -974,8 +974,32 @@ static int pppoe_xmit(struct ppp_channel *chan, struct sk_buff *skb)
@@ -2036,7 +2038,7 @@ index 087b01684..7a8c246ab 100644
  
  static int pppoe_recvmsg(struct socket *sock, struct msghdr *m,
 diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index 38af42bf8..9f64504ac 100644
+index 38af42b..9f64504 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -829,6 +829,59 @@ typedef u16 (*select_queue_fallback_t)(struct net_device *dev,
@@ -2135,7 +2137,7 @@ index 38af42bf8..9f64504ac 100644
  				      unsigned short mask);
  struct net_device *dev_get_by_name(struct net *net, const char *name);
 diff --git a/include/linux/ppp_channel.h b/include/linux/ppp_channel.h
-index 98966064e..91f9a9283 100644
+index 9896606..91f9a92 100644
 --- a/include/linux/ppp_channel.h
 +++ b/include/linux/ppp_channel.h
 @@ -28,6 +28,9 @@ struct ppp_channel_ops {
@@ -2149,10 +2151,10 @@ index 98966064e..91f9a9283 100644
  
  struct ppp_channel {
 diff --git a/include/net/dsa.h b/include/net/dsa.h
-index 05f66d487..cafc74218 100644
+index d29ee9e..43f65cb 100644
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
-@@ -561,6 +561,8 @@ struct dsa_switch_ops {
+@@ -562,6 +562,8 @@ struct dsa_switch_ops {
  					  struct sk_buff *skb);
  };
  
@@ -2161,7 +2163,7 @@ index 05f66d487..cafc74218 100644
  struct dsa_switch_driver {
  	struct list_head	list;
  	const struct dsa_switch_ops *ops;
-@@ -653,6 +655,14 @@ static inline int call_dsa_notifiers(unsigned long val, struct net_device *dev,
+@@ -654,6 +656,14 @@ static inline int call_dsa_notifiers(unsigned long val, struct net_device *dev,
  #define BRCM_TAG_GET_PORT(v)		((v) >> 8)
  #define BRCM_TAG_GET_QUEUE(v)		((v) & 0xff)
  
@@ -2177,7 +2179,7 @@ index 05f66d487..cafc74218 100644
  netdev_tx_t dsa_enqueue_skb(struct sk_buff *skb, struct net_device *dev);
  int dsa_port_get_phy_strings(struct dsa_port *dp, uint8_t *data);
 diff --git a/include/net/flow_offload.h b/include/net/flow_offload.h
-index c6f7bd22d..59b873653 100644
+index c6f7bd2..59b8736 100644
 --- a/include/net/flow_offload.h
 +++ b/include/net/flow_offload.h
 @@ -138,6 +138,7 @@ enum flow_action_id {
@@ -2199,7 +2201,7 @@ index c6f7bd22d..59b873653 100644
  };
  
 diff --git a/include/net/ip6_route.h b/include/net/ip6_route.h
-index 2c739fc75..89ab8f180 100644
+index 2c739fc..89ab8f1 100644
 --- a/include/net/ip6_route.h
 +++ b/include/net/ip6_route.h
 @@ -314,12 +314,13 @@ static inline bool rt6_duplicate_nexthop(struct fib6_info *a, struct fib6_info *
@@ -2219,7 +2221,7 @@ index 2c739fc75..89ab8f180 100644
  		if (mtu)
  			goto out;
 diff --git a/include/net/netfilter/ipv6/nf_conntrack_ipv6.h b/include/net/netfilter/ipv6/nf_conntrack_ipv6.h
-index 7b3c873f8..e95483192 100644
+index 7b3c873..e954831 100644
 --- a/include/net/netfilter/ipv6/nf_conntrack_ipv6.h
 +++ b/include/net/netfilter/ipv6/nf_conntrack_ipv6.h
 @@ -4,7 +4,4 @@
@@ -2231,7 +2233,7 @@ index 7b3c873f8..e95483192 100644
 -
  #endif /* _NF_CONNTRACK_IPV6_H*/
 diff --git a/include/net/netfilter/nf_conntrack.h b/include/net/netfilter/nf_conntrack.h
-index 90690e37a..ce0bc3e62 100644
+index 90690e3..ce0bc3e 100644
 --- a/include/net/netfilter/nf_conntrack.h
 +++ b/include/net/netfilter/nf_conntrack.h
 @@ -279,6 +279,18 @@ static inline bool nf_ct_should_gc(const struct nf_conn *ct)
@@ -2254,7 +2256,7 @@ index 90690e37a..ce0bc3e62 100644
  
  int nf_conntrack_set_hashsize(const char *val, const struct kernel_param *kp);
 diff --git a/include/net/netfilter/nf_conntrack_acct.h b/include/net/netfilter/nf_conntrack_acct.h
-index f7a060c6e..7f44a7715 100644
+index f7a060c..7f44a77 100644
 --- a/include/net/netfilter/nf_conntrack_acct.h
 +++ b/include/net/netfilter/nf_conntrack_acct.h
 @@ -65,6 +65,17 @@ static inline void nf_ct_set_acct(struct net *net, bool enable)
@@ -2276,7 +2278,7 @@ index f7a060c6e..7f44a7715 100644
  
  int nf_conntrack_acct_init(void);
 diff --git a/include/net/netfilter/nf_flow_table.h b/include/net/netfilter/nf_flow_table.h
-index 68d7fc92..7cf89767 100644
+index 68d7fc9..feac793 100644
 --- a/include/net/netfilter/nf_flow_table.h
 +++ b/include/net/netfilter/nf_flow_table.h
 @@ -8,31 +8,99 @@
@@ -2416,7 +2418,7 @@ index 68d7fc92..7cf89767 100644
  	};
  };
  
-@@ -67,52 +152,139 @@ struct flow_offload_tuple_rhash {
+@@ -67,52 +152,140 @@ struct flow_offload_tuple_rhash {
  	struct flow_offload_tuple	tuple;
  };
  
@@ -2429,6 +2431,7 @@ index 68d7fc92..7cf89767 100644
 +	NF_FLOW_DNAT,
 +	NF_FLOW_TEARDOWN,
 +	NF_FLOW_HW,
++	NF_FLOW_HW_ACCT_DYING,
 +	NF_FLOW_HW_DYING,
 +	NF_FLOW_HW_DEAD,
 +	NF_FLOW_HW_PENDING,
@@ -2578,7 +2581,7 @@ index 68d7fc92..7cf89767 100644
  
  struct flow_ports {
  	__be16 source, dest;
-@@ -126,4 +298,41 @@ unsigned int nf_flow_offload_ipv6_hook(void *priv, struct sk_buff *skb,
+@@ -126,4 +299,41 @@ unsigned int nf_flow_offload_ipv6_hook(void *priv, struct sk_buff *skb,
  #define MODULE_ALIAS_NF_FLOWTABLE(family)	\
  	MODULE_ALIAS("nf-flowtable-" __stringify(family))
  
@@ -2587,7 +2590,7 @@ index 68d7fc92..7cf89767 100644
 +void nf_flow_offload_del(struct nf_flowtable *flowtable,
 +			 struct flow_offload *flow);
 +void nf_flow_offload_stats(struct nf_flowtable *flowtable,
-+			   struct flow_offload *flow);
++			   struct flow_offload *flow, bool force);
 +
 +void nf_flow_table_offload_flush(struct nf_flowtable *flowtable);
 +int nf_flow_table_offload_setup(struct nf_flowtable *flowtable,
@@ -2621,7 +2624,7 @@ index 68d7fc92..7cf89767 100644
 +
  #endif /* _NF_FLOW_TABLE_H */
 diff --git a/include/net/netns/conntrack.h b/include/net/netns/conntrack.h
-index 806454e76..9e3963c8f 100644
+index 806454e..9e3963c 100644
 --- a/include/net/netns/conntrack.h
 +++ b/include/net/netns/conntrack.h
 @@ -27,6 +27,9 @@ struct nf_tcp_net {
@@ -2645,7 +2648,7 @@ index 806454e76..9e3963c8f 100644
  
  struct nf_icmp_net {
 diff --git a/include/uapi/linux/netfilter/nf_conntrack_common.h b/include/uapi/linux/netfilter/nf_conntrack_common.h
-index 336014bf8..ae698d11c 100644
+index 336014b..ae698d1 100644
 --- a/include/uapi/linux/netfilter/nf_conntrack_common.h
 +++ b/include/uapi/linux/netfilter/nf_conntrack_common.h
 @@ -105,14 +105,19 @@ enum ip_conntrack_status {
@@ -2672,7 +2675,7 @@ index 336014bf8..ae698d11c 100644
  /* Connection tracking event types */
 diff --git a/include/uapi/linux/netfilter/xt_FLOWOFFLOAD.h b/include/uapi/linux/netfilter/xt_FLOWOFFLOAD.h
 new file mode 100644
-index 000000000..5841bbe0e
+index 0000000..5841bbe
 --- /dev/null
 +++ b/include/uapi/linux/netfilter/xt_FLOWOFFLOAD.h
 @@ -0,0 +1,17 @@
@@ -2694,7 +2697,7 @@ index 000000000..5841bbe0e
 +
 +#endif /* _XT_FLOWOFFLOAD_H */
 diff --git a/net/8021q/vlan_dev.c b/net/8021q/vlan_dev.c
-index 589615ec4..444ab5fae 100644
+index 589615e..444ab5f 100644
 --- a/net/8021q/vlan_dev.c
 +++ b/net/8021q/vlan_dev.c
 @@ -747,6 +747,26 @@ static int vlan_dev_get_iflink(const struct net_device *dev)
@@ -2733,7 +2736,7 @@ index 589615ec4..444ab5fae 100644
  
  static void vlan_dev_free(struct net_device *dev)
 diff --git a/net/bridge/br_device.c b/net/bridge/br_device.c
-index 501f77f0f..0940b44cd 100644
+index 501f77f..0940b44 100644
 --- a/net/bridge/br_device.c
 +++ b/net/bridge/br_device.c
 @@ -377,6 +377,54 @@ static int br_del_slave(struct net_device *dev, struct net_device *slave_dev)
@@ -2800,7 +2803,7 @@ index 501f77f0f..0940b44cd 100644
  
  static struct device_type br_type = {
 diff --git a/net/bridge/br_private.h b/net/bridge/br_private.h
-index a736be8a1..4bd9e9b57 100644
+index a736be8..4bd9e9b 100644
 --- a/net/bridge/br_private.h
 +++ b/net/bridge/br_private.h
 @@ -912,6 +912,13 @@ void br_vlan_port_event(struct net_bridge_port *p, unsigned long event);
@@ -2838,7 +2841,7 @@ index a736be8a1..4bd9e9b57 100644
  					const struct net_bridge *br)
  {
 diff --git a/net/bridge/br_vlan.c b/net/bridge/br_vlan.c
-index 9257292bd..bcfd16924 100644
+index 9257292..bcfd169 100644
 --- a/net/bridge/br_vlan.c
 +++ b/net/bridge/br_vlan.c
 @@ -1268,6 +1268,61 @@ int br_vlan_get_pvid_rcu(const struct net_device *dev, u16 *p_pvid)
@@ -2904,7 +2907,7 @@ index 9257292bd..bcfd16924 100644
  		     struct bridge_vlan_info *p_vinfo)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index fe2c856b9..4f0edb218 100644
+index 5c9dc03..87449fe 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -639,6 +639,52 @@ int dev_fill_metadata_dst(struct net_device *dev, struct sk_buff *skb)
@@ -2961,7 +2964,7 @@ index fe2c856b9..4f0edb218 100644
   *	__dev_get_by_name	- find a device by its name
   *	@net: the applicable net namespace
 diff --git a/net/dsa/dsa.c b/net/dsa/dsa.c
-index ca80f8699..35a1249a9 100644
+index ca80f86..35a1249 100644
 --- a/net/dsa/dsa.c
 +++ b/net/dsa/dsa.c
 @@ -329,6 +329,15 @@ int call_dsa_notifiers(unsigned long val, struct net_device *dev,
@@ -2981,10 +2984,10 @@ index ca80f8699..35a1249a9 100644
  {
  	int rc;
 diff --git a/net/dsa/slave.c b/net/dsa/slave.c
-index 036fda317..2dfaa1eac 100644
+index e2b91b3..2dfaa1e 100644
 --- a/net/dsa/slave.c
 +++ b/net/dsa/slave.c
-@@ -1033,14 +1031,32 @@ static int dsa_slave_setup_tc_block(struct net_device *dev,
+@@ -1031,14 +1031,32 @@ static int dsa_slave_setup_tc_block(struct net_device *dev,
  	}
  }
  
@@ -3018,7 +3021,7 @@ index 036fda317..2dfaa1eac 100644
  
  	if (!ds->ops->port_setup_tc)
  		return -EOPNOTSUPP;
-@@ -1226,6 +1242,21 @@ static struct devlink_port *dsa_slave_get_devlink_port(struct net_device *dev)
+@@ -1224,6 +1242,21 @@ static struct devlink_port *dsa_slave_get_devlink_port(struct net_device *dev)
  	return dp->ds->devlink ? &dp->devlink_port : NULL;
  }
  
@@ -3040,7 +3043,7 @@ index 036fda317..2dfaa1eac 100644
  static const struct net_device_ops dsa_slave_netdev_ops = {
  	.ndo_open	 	= dsa_slave_open,
  	.ndo_stop		= dsa_slave_close,
-@@ -1250,6 +1281,7 @@ static const struct net_device_ops dsa_slave_netdev_ops = {
+@@ -1248,6 +1281,7 @@ static const struct net_device_ops dsa_slave_netdev_ops = {
  	.ndo_vlan_rx_add_vid	= dsa_slave_vlan_rx_add_vid,
  	.ndo_vlan_rx_kill_vid	= dsa_slave_vlan_rx_kill_vid,
  	.ndo_get_devlink_port	= dsa_slave_get_devlink_port,
@@ -3048,8 +3051,7 @@ index 036fda317..2dfaa1eac 100644
  };
  
  static struct device_type dsa_type = {
-@@ -1497,7 +1529,8 @@ void dsa_slave_destroy(struct net_device *slave_dev)
- bool dsa_slave_dev_check(const struct net_device *dev)
+@@ -1499,6 +1533,7 @@ bool dsa_slave_dev_check(const struct net_device *dev)
  {
  	return dev->netdev_ops == &dsa_slave_netdev_ops;
  }
@@ -3058,7 +3060,7 @@ index 036fda317..2dfaa1eac 100644
  static int dsa_slave_changeupper(struct net_device *dev,
  				 struct netdev_notifier_changeupper_info *info)
 diff --git a/net/ipv4/netfilter/Kconfig b/net/ipv4/netfilter/Kconfig
-index f17b40211..803b92e4c 100644
+index f17b402..803b92e 100644
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
 @@ -56,8 +56,6 @@ config NF_TABLES_ARP
@@ -3080,7 +3082,7 @@ index f17b40211..803b92e4c 100644
  	tristate "Netfilter IPv4 packet duplication to alternate destination"
  	depends on !NF_CONNTRACK || NF_CONNTRACK
 diff --git a/net/ipv6/ip6_output.c b/net/ipv6/ip6_output.c
-index 5585e3a94..bb76f6061 100644
+index 5585e3a..bb76f60 100644
 --- a/net/ipv6/ip6_output.c
 +++ b/net/ipv6/ip6_output.c
 @@ -607,7 +607,7 @@ int ip6_forward(struct sk_buff *skb)
@@ -3093,7 +3095,7 @@ index 5585e3a94..bb76f6061 100644
  		mtu = IPV6_MIN_MTU;
  
 diff --git a/net/ipv6/netfilter/Kconfig b/net/ipv6/netfilter/Kconfig
-index 69443e9a3..0b481d236 100644
+index 69443e9..0b481d2 100644
 --- a/net/ipv6/netfilter/Kconfig
 +++ b/net/ipv6/netfilter/Kconfig
 @@ -45,7 +45,6 @@ config NFT_FIB_IPV6
@@ -3114,7 +3116,7 @@ index 69443e9a3..0b481d236 100644
  	tristate "Netfilter IPv6 packet duplication to alternate destination"
  	depends on !NF_CONNTRACK || NF_CONNTRACK
 diff --git a/net/ipv6/route.c b/net/ipv6/route.c
-index 98aaf0b79..2b357ac71 100644
+index da553f8..6b28946 100644
 --- a/net/ipv6/route.c
 +++ b/net/ipv6/route.c
 @@ -83,7 +83,7 @@ enum rt6_nud_state {
@@ -3154,10 +3156,10 @@ index 98aaf0b79..2b357ac71 100644
  
  /* MTU selection:
 diff --git a/net/netfilter/Kconfig b/net/netfilter/Kconfig
-index b967763f5..c040e713a 100644
+index b6e0a62..5d690ab 100644
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -690,8 +690,6 @@ config NFT_FIB_NETDEV
+@@ -689,8 +689,6 @@ config NFT_FIB_NETDEV
  
  endif # NF_TABLES_NETDEV
  
@@ -3166,7 +3168,7 @@ index b967763f5..c040e713a 100644
  config NF_FLOW_TABLE_INET
  	tristate "Netfilter flow table mixed IPv4/IPv6 module"
  	depends on NF_FLOW_TABLE
-@@ -700,11 +698,12 @@ config NF_FLOW_TABLE_INET
+@@ -699,11 +697,12 @@ config NF_FLOW_TABLE_INET
  
  	  To compile it as a module, choose M here.
  
@@ -3180,7 +3182,7 @@ index b967763f5..c040e713a 100644
  	help
  	  This option adds the flow table core infrastructure.
  
-@@ -984,6 +983,15 @@ config NETFILTER_XT_TARGET_NOTRACK
+@@ -983,6 +982,15 @@ config NETFILTER_XT_TARGET_NOTRACK
  	depends on NETFILTER_ADVANCED
  	select NETFILTER_XT_TARGET_CT
  
@@ -3197,7 +3199,7 @@ index b967763f5..c040e713a 100644
  	tristate '"RATEEST" target support'
  	depends on NETFILTER_ADVANCED
 diff --git a/net/netfilter/Makefile b/net/netfilter/Makefile
-index 4fc075b61..d93a121bc 100644
+index 4fc075b..d93a121 100644
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
 @@ -120,7 +120,8 @@ obj-$(CONFIG_NFT_FWD_NETDEV)	+= nft_fwd_netdev.o
@@ -3219,10 +3221,10 @@ index 4fc075b61..d93a121bc 100644
  obj-$(CONFIG_NETFILTER_XT_TARGET_HMARK) += xt_HMARK.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 diff --git a/net/netfilter/nf_conntrack_core.c b/net/netfilter/nf_conntrack_core.c
-index f6ab6f484..f689e19d8 100644
+index f6ab6f4..f689e19 100644
 --- a/net/netfilter/nf_conntrack_core.c
 +++ b/net/netfilter/nf_conntrack_core.c
-@@ -864,9 +864,8 @@ out:
+@@ -864,9 +864,8 @@ nf_conntrack_hash_check_insert(struct nf_conn *ct)
  }
  EXPORT_SYMBOL_GPL(nf_conntrack_hash_check_insert);
  
@@ -3288,7 +3290,7 @@ index f6ab6f484..f689e19d8 100644
  	return nf_ct_delete(ct, 0, 0);
  }
 diff --git a/net/netfilter/nf_conntrack_proto_tcp.c b/net/netfilter/nf_conntrack_proto_tcp.c
-index 7204f0366..3742bae21 100644
+index 7204f03..3742bae 100644
 --- a/net/netfilter/nf_conntrack_proto_tcp.c
 +++ b/net/netfilter/nf_conntrack_proto_tcp.c
 @@ -1453,6 +1453,10 @@ void nf_conntrack_tcp_init_net(struct net *net)
@@ -3303,7 +3305,7 @@ index 7204f0366..3742bae21 100644
  
  const struct nf_conntrack_l4proto nf_conntrack_l4proto_tcp =
 diff --git a/net/netfilter/nf_conntrack_proto_udp.c b/net/netfilter/nf_conntrack_proto_udp.c
-index e3a2d018f..a1579d6c3 100644
+index e3a2d01..a1579d6 100644
 --- a/net/netfilter/nf_conntrack_proto_udp.c
 +++ b/net/netfilter/nf_conntrack_proto_udp.c
 @@ -267,6 +267,10 @@ void nf_conntrack_udp_init_net(struct net *net)
@@ -3318,7 +3320,7 @@ index e3a2d018f..a1579d6c3 100644
  
  const struct nf_conntrack_l4proto nf_conntrack_l4proto_udp =
 diff --git a/net/netfilter/nf_conntrack_standalone.c b/net/netfilter/nf_conntrack_standalone.c
-index 9c6259c28..10d9f93ce 100644
+index 9c6259c..10d9f93 100644
 --- a/net/netfilter/nf_conntrack_standalone.c
 +++ b/net/netfilter/nf_conntrack_standalone.c
 @@ -353,7 +353,9 @@ static int ct_seq_show(struct seq_file *s, void *v)
@@ -3403,7 +3405,7 @@ index 9c6259c28..10d9f93ce 100644
  	nf_conntrack_standalone_init_tcp_sysctl(net, table);
  	nf_conntrack_standalone_init_sctp_sysctl(net, table);
 diff --git a/net/netfilter/nf_flow_table_core.c b/net/netfilter/nf_flow_table_core.c
-index f212cec0..10365581 100644
+index f212cec..c3054af 100644
 --- a/net/netfilter/nf_flow_table_core.c
 +++ b/net/netfilter/nf_flow_table_core.c
 @@ -7,43 +7,21 @@
@@ -3904,7 +3906,7 @@ index f212cec0..10365581 100644
  		if (IS_ERR(tuplehash)) {
  			if (PTR_ERR(tuplehash) != -EAGAIN) {
  				err = PTR_ERR(tuplehash);
-@@ -359,23 +430,49 @@ nf_flow_table_iterate(struct nf_flowtable *flow_table,
+@@ -359,23 +430,52 @@ nf_flow_table_iterate(struct nf_flowtable *flow_table,
  
  	return err;
  }
@@ -3952,6 +3954,9 @@ index f212cec0..10365581 100644
 +
 +	if (test_bit(NF_FLOW_TEARDOWN, &flow->flags)) {
 +		if (test_bit(NF_FLOW_HW, &flow->flags)) {
++			if (!test_and_set_bit(NF_FLOW_HW_ACCT_DYING, &flow->flags))
++				nf_flow_offload_stats(flow_table, flow, true);
++
 +			if (!test_bit(NF_FLOW_HW_DYING, &flow->flags))
 +				nf_flow_offload_del(flow_table, flow);
 +			else if (test_bit(NF_FLOW_HW_DEAD, &flow->flags))
@@ -3960,12 +3965,12 @@ index f212cec0..10365581 100644
 +			flow_offload_del(flow_table, flow);
 +		}
 +	} else if (test_bit(NF_FLOW_HW, &flow->flags)) {
-+		nf_flow_offload_stats(flow_table, flow);
++		nf_flow_offload_stats(flow_table, flow, false);
 +	}
  }
  
  static void nf_flow_offload_work_gc(struct work_struct *work)
-@@ -387,30 +484,20 @@ static void nf_flow_offload_work_gc(struct work_struct *work)
+@@ -387,30 +487,20 @@ static void nf_flow_offload_work_gc(struct work_struct *work)
  	queue_delayed_work(system_power_efficient_wq, &flow_table->gc_work, HZ);
  }
  
@@ -4000,7 +4005,7 @@ index f212cec0..10365581 100644
  	udph = (void *)(skb_network_header(skb) + thoff);
  	if (udph->check || skb->ip_summed == CHECKSUM_PARTIAL) {
  		inet_proto_csum_replace2(&udph->check, skb, port,
-@@ -418,38 +505,28 @@ static int nf_flow_nat_port_udp(struct sk_buff *skb, unsigned int thoff,
+@@ -418,38 +508,28 @@ static int nf_flow_nat_port_udp(struct sk_buff *skb, unsigned int thoff,
  		if (!udph->check)
  			udph->check = CSUM_MANGLED_0;
  	}
@@ -4046,7 +4051,7 @@ index f212cec0..10365581 100644
  	hdr = (void *)(skb_network_header(skb) + thoff);
  
  	switch (dir) {
-@@ -463,25 +540,19 @@ int nf_flow_snat_port(const struct flow_offload *flow,
+@@ -463,25 +543,19 @@ int nf_flow_snat_port(const struct flow_offload *flow,
  		new_port = flow->tuplehash[FLOW_OFFLOAD_DIR_ORIGINAL].tuple.src_port;
  		hdr->dest = new_port;
  		break;
@@ -4076,7 +4081,7 @@ index f212cec0..10365581 100644
  	hdr = (void *)(skb_network_header(skb) + thoff);
  
  	switch (dir) {
-@@ -495,11 +566,9 @@ int nf_flow_dnat_port(const struct flow_offload *flow,
+@@ -495,11 +569,9 @@ int nf_flow_dnat_port(const struct flow_offload *flow,
  		new_port = flow->tuplehash[FLOW_OFFLOAD_DIR_ORIGINAL].tuple.dst_port;
  		hdr->source = new_port;
  		break;
@@ -4089,7 +4094,7 @@ index f212cec0..10365581 100644
  }
  EXPORT_SYMBOL_GPL(nf_flow_dnat_port);
  
-@@ -507,7 +576,9 @@ int nf_flow_table_init(struct nf_flowtable *flowtable)
+@@ -507,7 +579,9 @@ int nf_flow_table_init(struct nf_flowtable *flowtable)
  {
  	int err;
  
@@ -4100,7 +4105,7 @@ index f212cec0..10365581 100644
  
  	err = rhashtable_init(&flowtable->rhashtable,
  			      &nf_flow_offload_rhash_params);
-@@ -528,25 +599,24 @@ EXPORT_SYMBOL_GPL(nf_flow_table_init);
+@@ -528,25 +602,24 @@ EXPORT_SYMBOL_GPL(nf_flow_table_init);
  static void nf_flow_table_do_cleanup(struct flow_offload *flow, void *data)
  {
  	struct net_device *dev = data;
@@ -4132,7 +4137,7 @@ index f212cec0..10365581 100644
  }
  
  void nf_flow_table_cleanup(struct net_device *dev)
-@@ -555,7 +625,7 @@ void nf_flow_table_cleanup(struct net_device *dev)
+@@ -555,7 +628,7 @@ void nf_flow_table_cleanup(struct net_device *dev)
  
  	mutex_lock(&flowtable_lock);
  	list_for_each_entry(flowtable, &flowtables, list)
@@ -4141,7 +4146,7 @@ index f212cec0..10365581 100644
  	mutex_unlock(&flowtable_lock);
  }
  EXPORT_SYMBOL_GPL(nf_flow_table_cleanup);
-@@ -565,9 +635,14 @@ void nf_flow_table_free(struct nf_flowtable *flow_table)
+@@ -565,9 +638,14 @@ void nf_flow_table_free(struct nf_flowtable *flow_table)
  	mutex_lock(&flowtable_lock);
  	list_del(&flow_table->list);
  	mutex_unlock(&flowtable_lock);
@@ -4156,7 +4161,7 @@ index f212cec0..10365581 100644
  	rhashtable_destroy(&flow_table->rhashtable);
  }
  EXPORT_SYMBOL_GPL(nf_flow_table_free);
-@@ -591,12 +666,23 @@ static struct notifier_block flow_offload_netdev_notifier = {
+@@ -591,12 +669,23 @@ static struct notifier_block flow_offload_netdev_notifier = {
  
  static int __init nf_flow_table_module_init(void)
  {
@@ -4181,13 +4186,13 @@ index f212cec0..10365581 100644
  }
  
  module_init(nf_flow_table_module_init);
-@@ -604,3 +690,4 @@ module_exit(nf_flow_table_module_exit);
+@@ -604,3 +693,4 @@ module_exit(nf_flow_table_module_exit);
  
  MODULE_LICENSE("GPL");
  MODULE_AUTHOR("Pablo Neira Ayuso <pablo@netfilter.org>");
 +MODULE_DESCRIPTION("Netfilter flow table module");
 diff --git a/net/netfilter/nf_flow_table_ip.c b/net/netfilter/nf_flow_table_ip.c
-index 397129b2..6257d87c 100644
+index 397129b..6257d87 100644
 --- a/net/netfilter/nf_flow_table_ip.c
 +++ b/net/netfilter/nf_flow_table_ip.c
 @@ -7,11 +7,13 @@
@@ -4916,10 +4921,10 @@ index 397129b2..6257d87c 100644
  EXPORT_SYMBOL_GPL(nf_flow_offload_ipv6_hook);
 diff --git a/net/netfilter/nf_flow_table_offload.c b/net/netfilter/nf_flow_table_offload.c
 new file mode 100644
-index 000000000..d94c6fb92
+index 0000000..5263c1c
 --- /dev/null
 +++ b/net/netfilter/nf_flow_table_offload.c
-@@ -0,0 +1,1195 @@
+@@ -0,0 +1,1197 @@
 +#include <linux/kernel.h>
 +#include <linux/init.h>
 +#include <linux/module.h>
@@ -5957,14 +5962,16 @@ index 000000000..d94c6fb92
 +}
 +
 +void nf_flow_offload_stats(struct nf_flowtable *flowtable,
-+			   struct flow_offload *flow)
++			   struct flow_offload *flow, bool force)
 +{
 +	struct flow_offload_work *offload;
 +	__s32 delta;
 +
-+	delta = nf_flow_timeout_delta(flow->timeout);
-+	if ((delta >= (9 * flow_offload_get_timeout(flow)) / 10))
-+		return;
++	if (!force) {
++		delta = nf_flow_timeout_delta(flow->timeout);
++		if ((delta >= (9 * flow_offload_get_timeout(flow)) / 10))
++			return;
++	}
 +
 +	offload = nf_flow_offload_work_alloc(flowtable, flow, FLOW_CLS_STATS);
 +	if (!offload)
@@ -6117,10 +6124,10 @@ index 000000000..d94c6fb92
 +}
 diff --git a/net/netfilter/xt_FLOWOFFLOAD.c b/net/netfilter/xt_FLOWOFFLOAD.c
 new file mode 100644
-index 000000000..ae1eb2656
+index 0000000..489832d
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,728 @@
+@@ -0,0 +1,785 @@
 +/*
 + * Copyright (C) 2018-2021 Felix Fietkau <nbd@nbd.name>
 + *
@@ -6505,19 +6512,28 @@ index 000000000..ae1eb2656
 +	return dev_fill_forward_path(dev, ha, stack);
 +}
 +
-+static int nf_dev_forward_path(struct nf_flow_route *route,
++static int nf_dev_forward_path(struct sk_buff *skb,
++				struct nf_flow_route *route,
 +				const struct nf_conn *ct,
 +				enum ip_conntrack_dir dir,
 +				struct net_device **devs)
 +{
 +	const struct dst_entry *dst = route->tuple[dir].dst;
++	struct ethhdr *eth = eth_hdr(skb);
 +	struct net_device_path_stack stack;
 +	struct nf_forward_info info = {};
 +	unsigned char ha[ETH_ALEN];
 +	int i;
 +
-+	if (nf_dev_fill_forward_path(route, dst, ct, dir, ha, &stack) >= 0)
++	if (nf_dev_fill_forward_path(route, dst, ct, dir, ha, &stack) >= 0) {
++		if (!(ct->status & IPS_NAT_MASK)) {
++			if (dir == IP_CT_DIR_ORIGINAL)
++				memcpy(info.h_source, eth->h_source, ETH_ALEN);
++			else if (dir == IP_CT_DIR_REPLY)
++				memcpy(info.h_source, eth->h_dest, ETH_ALEN);
++		}
 +		nf_dev_path_info(&stack, &info, ha);
++	}
 +
 +	devs[!dir] = (struct net_device *)info.indev;
 +	if (!info.indev)
@@ -6574,10 +6590,51 @@ index 000000000..ae1eb2656
 +}
 +
 +static int
-+xt_flowoffload_route(struct sk_buff *skb, const struct nf_conn *ct,
-+		     const struct xt_action_param *par,
-+		     struct nf_flow_route *route, enum ip_conntrack_dir dir,
-+		     struct net_device **devs)
++xt_flowoffload_route_nat(struct sk_buff *skb, const struct nf_conn *ct,
++			 const struct xt_action_param *par,
++			 struct nf_flow_route *route, enum ip_conntrack_dir dir,
++			 struct net_device **devs)
++{
++	struct dst_entry *this_dst = skb_dst(skb);
++	struct dst_entry *other_dst = NULL;
++	struct flowi fl;
++
++	memset(&fl, 0, sizeof(fl));
++	switch (xt_family(par)) {
++	case NFPROTO_IPV4:
++		fl.u.ip4.daddr = ct->tuplehash[dir].tuple.src.u3.ip;
++		fl.u.ip4.flowi4_oif = xt_in(par)->ifindex;
++		break;
++	case NFPROTO_IPV6:
++		fl.u.ip6.saddr = ct->tuplehash[!dir].tuple.dst.u3.in6;
++		fl.u.ip6.daddr = ct->tuplehash[dir].tuple.src.u3.in6;
++		fl.u.ip6.flowi6_oif = xt_in(par)->ifindex;
++		break;
++	}
++
++	nf_route(xt_net(par), &other_dst, &fl, false, xt_family(par));
++	if (!other_dst)
++		return -ENOENT;
++
++	nf_default_forward_path(route, this_dst, dir, devs);
++	nf_default_forward_path(route, other_dst, !dir, devs);
++
++	if (route->tuple[dir].xmit_type	== FLOW_OFFLOAD_XMIT_NEIGH &&
++	    route->tuple[!dir].xmit_type == FLOW_OFFLOAD_XMIT_NEIGH) {
++		if (nf_dev_forward_path(skb, route, ct, dir, devs))
++			return -1;
++		if (nf_dev_forward_path(skb, route, ct, !dir, devs))
++			return -1;
++	}
++
++	return 0;
++}
++
++static int
++xt_flowoffload_route_bridge(struct sk_buff *skb, const struct nf_conn *ct,
++			    const struct xt_action_param *par,
++			    struct nf_flow_route *route, enum ip_conntrack_dir dir,
++			    struct net_device **devs)
 +{
 +	int ret;
 +
@@ -6593,10 +6650,10 @@ index 000000000..ae1eb2656
 +	if (ret)
 +		goto err_route_dir1;
 +
-+	if (route->tuple[dir].xmit_type	== FLOW_OFFLOAD_XMIT_NEIGH &&
++	if (route->tuple[dir].xmit_type == FLOW_OFFLOAD_XMIT_NEIGH &&
 +	    route->tuple[!dir].xmit_type == FLOW_OFFLOAD_XMIT_NEIGH) {
-+		if (nf_dev_forward_path(route, ct, dir, devs) ||
-+		    nf_dev_forward_path(route, ct, !dir, devs)) {
++		if (nf_dev_forward_path(skb, route, ct, dir, devs) ||
++		    nf_dev_forward_path(skb, route, ct, !dir, devs)) {
 +			ret = -1;
 +			goto err_route_dir2;
 +		}
@@ -6666,8 +6723,13 @@ index 000000000..ae1eb2656
 +
 +	dir = CTINFO2DIR(ctinfo);
 +
-+	if (xt_flowoffload_route(skb, ct, par, &route, dir, devs) < 0)
-+		goto err_flow_route;
++	if (ct->status & IPS_NAT_MASK) {
++		if (xt_flowoffload_route_nat(skb, ct, par, &route, dir, devs) < 0)
++			goto err_flow_route;
++	} else {
++		if (xt_flowoffload_route_bridge(skb, ct, par, &route, dir, devs) < 0)
++			goto err_flow_route;
++	}
 +
 +	flow = flow_offload_alloc(ct);
 +	if (!flow)
@@ -6693,7 +6755,8 @@ index 000000000..ae1eb2656
 +	xt_flowoffload_check_device(table, devs[0]);
 +	xt_flowoffload_check_device(table, devs[1]);
 +
-+	dst_release(route.tuple[dir].dst);
++	if (!(ct->status & IPS_NAT_MASK))
++		dst_release(route.tuple[dir].dst);
 +	dst_release(route.tuple[!dir].dst);
 +
 +	return XT_CONTINUE;
@@ -6701,7 +6764,8 @@ index 000000000..ae1eb2656
 +err_flow_add:
 +	flow_offload_free(flow);
 +err_flow_alloc:
-+	dst_release(route.tuple[dir].dst);
++	if (!(ct->status & IPS_NAT_MASK))
++		dst_release(route.tuple[dir].dst);
 +	dst_release(route.tuple[!dir].dst);
 +err_flow_route:
 +	clear_bit(IPS_OFFLOAD_BIT, &ct->status);

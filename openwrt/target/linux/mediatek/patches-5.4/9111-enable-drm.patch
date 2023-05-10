@@ -1,0 +1,57 @@
+diff -Nuar a/drivers/firmware/psci/psci.c b/drivers/firmware/psci/psci.c
+--- a/drivers/firmware/psci/psci.c	2022-05-13 18:01:29.985583888 +0800
++++ b/drivers/firmware/psci/psci.c	2022-05-13 17:50:20.979249909 +0800
+@@ -267,7 +267,7 @@
+
+ static void psci_sys_reset(enum reboot_mode reboot_mode, const char *cmd)
+ {
+-	if ((reboot_mode == REBOOT_WARM || reboot_mode == REBOOT_SOFT) &&
++	if ((reboot_mode == REBOOT_WARM || reboot_mode == REBOOT_SOFT || get_reboot_emergency()) &&
+ 	    psci_system_reset2_supported) {
+ 		/*
+ 		 * reset_type[31] = 0 (architectural)
+
+diff -Nuar a/include/linux/reboot.h b/include/linux/reboot.h
+--- a/include/linux/reboot.h	2022-05-13 17:48:46.071494533 +0800
++++ b/include/linux/reboot.h	2022-05-13 17:50:34.191215859 +0800
+@@ -59,6 +59,7 @@
+ extern void machine_power_off(void);
+ 
+ extern void machine_shutdown(void);
++extern bool get_reboot_emergency(void);
+ struct pt_regs;
+ extern void machine_crash_shutdown(struct pt_regs *);
+ 
+diff -Nuar a/kernel/reboot.c b/kernel/reboot.c
+--- a/kernel/reboot.c	2022-05-13 17:49:29.071383727 +0800
++++ b/kernel/reboot.c	2022-05-13 17:50:06.435287398 +0800
+@@ -46,6 +46,8 @@
+ enum reboot_type reboot_type = BOOT_ACPI;
+ int reboot_force;
+ 
++static bool reboot_emergency = false;
++
+ /*
+  * If set, this is used for preparing the system to power off.
+  */
+@@ -64,6 +66,7 @@
+ void emergency_restart(void)
+ {
+ 	kmsg_dump(KMSG_DUMP_EMERG);
++	reboot_emergency = true;
+ 	machine_emergency_restart();
+ }
+ EXPORT_SYMBOL_GPL(emergency_restart);
+@@ -76,6 +79,12 @@
+ 	device_shutdown();
+ }
+ 
++bool get_reboot_emergency(void)
++{
++	return reboot_emergency;
++}
++EXPORT_SYMBOL_GPL(get_reboot_emergency);
++
+ /**
+  *	register_reboot_notifier - Register function to be called at reboot time
+  *	@nb: Info about notifier function to be called
